@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+}
+
+/* ── Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* ── Mode transitions ─────────────────────────────────── */
+.mode-bg-transition {
+  transition: background-color 0.7s ease, border-color 0.5s ease;
+}
+
+.content-fade {
+  transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+}
+
+.content-fade.fading {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/* ── Overwhelmed mode: breathing pulse ───────────────── */
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
+
+.breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* ── Dot progress indicators ─────────────────────────── */
+.dot-active {
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* ── Step completion animation ───────────────────────── */
+@keyframes checkIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.check-animate {
+  animation: checkIn 0.25s ease-out forwards;
+}
+
+/* ── Slide in from bottom for mode panel on mobile ───── */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* ── Focus styles ─────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid #8B5CF6;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
