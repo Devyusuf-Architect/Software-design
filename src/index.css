@@ -76,3 +76,89 @@ body {
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* ══════════════════════════════════════════════════════════
+   HOMEPAGE ANIMATIONS
+   ══════════════════════════════════════════════════════════ */
+
+/* Hero text entrance */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-in-0 { animation: heroFadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+.hero-in-1 { animation: heroFadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.15s both; }
+.hero-in-2 { animation: heroFadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.25s both; }
+.hero-in-3 { animation: heroFadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.38s both; }
+.hero-in-4 { animation: heroFadeUp 0.75s cubic-bezier(0.16,1,0.3,1) 0.52s both; }
+
+/* Floating mode cards */
+@keyframes floatA { 0%,100%{transform:translateY(0) rotate(0deg)}  50%{transform:translateY(-14px) rotate(2deg)}  }
+@keyframes floatB { 0%,100%{transform:translateY(0) rotate(0deg)}  50%{transform:translateY(-10px) rotate(-3deg)} }
+@keyframes floatC { 0%,100%{transform:translateY(0) rotate(0deg)}  50%{transform:translateY(-18px) rotate(1deg)}  }
+@keyframes floatD { 0%,100%{transform:translateY(0) rotate(0deg)}  50%{transform:translateY(-8px)  rotate(-2deg)} }
+@keyframes floatE { 0%,100%{transform:translateY(0) rotate(0deg)}  50%{transform:translateY(-12px) rotate(3deg)}  }
+
+.float-a { animation: floatA 6s   ease-in-out infinite; }
+.float-b { animation: floatB 7s   ease-in-out 1s   infinite; }
+.float-c { animation: floatC 5.5s ease-in-out 0.5s infinite; }
+.float-d { animation: floatD 8s   ease-in-out 1.5s infinite; }
+.float-e { animation: floatE 6.5s ease-in-out 2s   infinite; }
+
+/* Scroll-triggered fade-in */
+.scroll-fade {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1),
+              transform 0.65s cubic-bezier(0.16,1,0.3,1);
+}
+.scroll-fade.visible          { opacity: 1; transform: translateY(0); }
+.scroll-fade.delay-1          { transition-delay: 0.10s; }
+.scroll-fade.delay-2          { transition-delay: 0.20s; }
+.scroll-fade.delay-3          { transition-delay: 0.30s; }
+.scroll-fade.delay-4          { transition-delay: 0.40s; }
+.scroll-fade.delay-5          { transition-delay: 0.50s; }
+.scroll-fade.delay-6          { transition-delay: 0.60s; }
+
+/* Infinite marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 28s linear infinite;
+  white-space: nowrap;
+}
+.marquee-track:hover { animation-play-state: paused; }
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #7C3AED 0%, #0D9488 50%, #D97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animated gradient background (hero glow) */
+@keyframes bgPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1);    }
+  50%       { opacity: 0.8; transform: scale(1.08); }
+}
+.bg-blob {
+  filter: blur(80px);
+  animation: bgPulse 8s ease-in-out infinite;
+}
+.bg-blob-2 {
+  filter: blur(100px);
+  animation: bgPulse 10s ease-in-out 2s infinite;
+}
+
+/* Nav scroll shadow */
+.nav-scrolled {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 1px 20px rgba(0,0,0,0.06);
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }

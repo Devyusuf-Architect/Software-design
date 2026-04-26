@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
+import HomePage    from './components/HomePage';
 import Onboarding  from './components/Onboarding';
 import ModePanel   from './components/ModePanel';
 import ContentArea from './components/ContentArea';
+import AuthModal   from './components/auth/AuthModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useAuth }         from './hooks/useAuth';
 import { modeConfigs }     from './utils/modeConfigs';
 
 const DEMO_TEXT = `Digital overload is something many of us experience every single day. The moment we open our devices, we are met with a flood of notifications, news headlines, emails, and social media updates. This relentless stream of information can leave us feeling drained, scattered, and unable to focus on what actually matters.
@@ -22,128 +25,180 @@ When you feel calm and ready, you have full access to everything. All features, 
 This is your space. ClearPath meets you where you are.`;
 
 const SESSION_KEY = 'clearpath_session';
+const loadSession = () => { try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; } };
+const saveSession = (d)  => { try { localStorage.setItem(SESSION_KEY, JSON.stringify({ ...d, savedAt: Date.now() })); } catch {} };
 
-function loadSession() {
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-  catch { return null; }
-}
-
-function saveSession(data) {
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ ...data, savedAt: Date.now() })); }
-  catch { /* ignore */ }
-}
-
+// view: 'home' | 'onboarding' | 'app'
+// authModal: null | 'signin' | 'signup'
 export default function App() {
+  const { user, signUp, signIn, signOut } = useAuth();
+
   const [onboardingDone, setOnboardingDone, clearOnboarding] = useLocalStorage('clearpath_onboarding', false);
   const [preferences,    setPreferences,    clearPreferences] = useLocalStorage('clearpath_prefs', null);
 
-  const [mode,      setMode]      = useState('calm');
-  const [text,      setText]      = useState(DEMO_TEXT);
-  const [resumeBanner, setResumeBanner] = useState(null); // { mode, savedAt }
+  const [view,       setView]       = useState(() => {
+    if (user && onboardingDone) return 'app';
+    if (user)                   return 'onboarding';
+    return 'home';
+  });
+  const [authModal,  setAuthModal]  = useState(null); // null | 'signin' | 'signup'
+  const [mode,       setMode]       = useState('calm');
+  const [text,       setText]       = useState(DEMO_TEXT);
+  const [resumeBanner, setResumeBanner] = useState(null);
 
-  // On first load, check for a saved session
+  // If user signs in while on homepage, advance to onboarding or app
   useEffect(() => {
-    const session = loadSession();
-    if (session && session.mode && onboardingDone) {
-      setResumeBanner(session);
+    if (user && view === 'home') {
+      setAuthModal(null);
+      setView(onboardingDone ? 'app' : 'onboarding');
     }
-  }, []); // eslint-disable-line
+  }, [user]); // eslint-disable-line
 
+  // Check for saved session on app load
+  useEffect(() => {
+    if (view === 'app') {
+      const s = loadSession();
+      if (s?.mode) setResumeBanner(s);
+    }
+  }, [view]);
+
+  /* ── Auth modal handler ─────────────────────────────────── */
+  const handleAuthSuccess = (tab, name, email, password) => {
+    const result = tab === 'signup' ? signUp(name, email, password) : signIn(email, password);
+    if (result?.error) return result; // propagate error back to modal
+    setAuthModal(null);
+    if (!onboardingDone) setView('onboarding');
+    else setView('app');
+  };
+
+  /* ── Onboarding complete ────────────────────────────────── */
   const handleOnboardingComplete = (prefs) => {
     setPreferences(prefs);
     setOnboardingDone(true);
     if (prefs.currentFeeling) setMode(prefs.currentFeeling);
+    setView('app');
   };
 
-  const handleResetOnboarding = () => {
+  /* ── Onboarding sign-up (step 4) ────────────────────────── */
+  const handleOnboardingSignUp = (name, email, password) => {
+    return signUp(name, email, password); // result returned to AccountStep
+  };
+
+  /* ── Reset ──────────────────────────────────────────────── */
+  const handleReset = () => {
     clearOnboarding();
     clearPreferences();
     localStorage.removeItem(SESSION_KEY);
     setMode('calm');
     setText(DEMO_TEXT);
     setResumeBanner(null);
+    setView('home');
   };
 
+  const handleSignOut = () => {
+    signOut();
+    handleReset();
+  };
+
+  /* ── Session save ───────────────────────────────────────── */
   const handleSessionSave = () => {
     saveSession({ mode, text: text !== DEMO_TEXT ? text : undefined });
-    // Brief visual feedback via the banner state
     setResumeBanner({ mode, savedAt: Date.now(), justSaved: true });
     setTimeout(() => setResumeBanner(null), 2500);
   };
 
-  const handleResume = () => {
-    if (!resumeBanner) return;
-    setMode(resumeBanner.mode);
-    if (resumeBanner.text) setText(resumeBanner.text);
-    setResumeBanner(null);
-  };
-
-  if (!onboardingDone) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
-  }
-
   const config = modeConfigs[mode];
 
-  return (
-    <div className="flex min-h-screen relative">
+  /* ══════ RENDER ════════════════════════════════════════════ */
 
-      {/* Resume / saved banner */}
-      {resumeBanner && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-slate-800 text-white rounded-2xl shadow-xl text-sm">
-          {resumeBanner.justSaved ? (
-            <>
-              <span className="text-green-400">✓</span>
-              <span>Session saved in <strong>{modeConfigs[resumeBanner.mode]?.name}</strong> mode</span>
-            </>
-          ) : (
-            <>
-              <span>Resume in <strong>{modeConfigs[resumeBanner.mode]?.name} {modeConfigs[resumeBanner.mode]?.icon}</strong> mode?</span>
-              <button onClick={handleResume} className="ml-1 bg-violet-500 hover:bg-violet-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors">
-                Resume
-              </button>
-              <button onClick={() => setResumeBanner(null)} className="text-slate-400 hover:text-white transition-colors text-xs px-1">
-                ✕
-              </button>
-            </>
-          )}
-        </div>
+  return (
+    <>
+      {/* Auth modal — available from any view */}
+      {authModal && (
+        <AuthModal
+          initialTab={authModal}
+          onSuccess={handleAuthSuccess}
+          onClose={() => setAuthModal(null)}
+        />
       )}
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:block">
-        <ModePanel
-          currentMode={mode}
-          onModeChange={setMode}
-          onResetOnboarding={handleResetOnboarding}
+      {/* Home page */}
+      {view === 'home' && (
+        <HomePage
+          onGetStarted={() => setView('onboarding')}
+          onSignIn={() => setAuthModal('signin')}
         />
-      </div>
+      )}
 
-      {/* Main content */}
-      <ContentArea
-        mode={mode}
-        text={text}
-        onTextChange={setText}
-        config={config}
-        onModeChange={setMode}
-        preferences={preferences}
-        onSessionSave={handleSessionSave}
-      />
+      {/* Onboarding */}
+      {view === 'onboarding' && (
+        <Onboarding
+          onComplete={handleOnboardingComplete}
+          user={user}
+          onSignUp={handleOnboardingSignUp}
+        />
+      )}
 
-      {/* Mobile bottom mode bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-slate-100 flex justify-around px-2 py-2 shadow-lg">
-        {Object.values(modeConfigs).map(c => (
-          <button
-            key={c.id}
-            onClick={() => setMode(c.id)}
-            className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-200 ${
-              mode === c.id ? `${c.twAccentLight} ${c.twAccentText}` : 'text-slate-400'
-            }`}
-          >
-            <span className="text-xl">{c.icon}</span>
-            <span className="text-[10px] font-medium">{c.name}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
+      {/* Main app */}
+      {view === 'app' && (
+        <div className="flex min-h-screen relative">
+
+          {/* Resume session banner */}
+          {resumeBanner && (
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-slate-800 text-white rounded-2xl shadow-xl text-sm whitespace-nowrap">
+              {resumeBanner.justSaved ? (
+                <><span className="text-green-400">✓</span> Session saved in <strong>{modeConfigs[resumeBanner.mode]?.name}</strong> mode</>
+              ) : (
+                <>
+                  <span>Resume in <strong>{modeConfigs[resumeBanner.mode]?.icon} {modeConfigs[resumeBanner.mode]?.name}</strong> mode?</span>
+                  <button onClick={() => { setMode(resumeBanner.mode); if (resumeBanner.text) setText(resumeBanner.text); setResumeBanner(null); }}
+                    className="bg-violet-500 hover:bg-violet-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors">
+                    Resume
+                  </button>
+                  <button onClick={() => setResumeBanner(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Desktop sidebar */}
+          <div className="hidden lg:block">
+            <ModePanel
+              currentMode={mode}
+              onModeChange={setMode}
+              onResetOnboarding={handleReset}
+              user={user}
+              onSignOut={handleSignOut}
+              onSignIn={() => setAuthModal('signin')}
+            />
+          </div>
+
+          {/* Content */}
+          <ContentArea
+            mode={mode}
+            text={text}
+            onTextChange={setText}
+            config={config}
+            onModeChange={setMode}
+            preferences={preferences}
+            onSessionSave={handleSessionSave}
+          />
+
+          {/* Mobile bottom bar */}
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-slate-100 flex justify-around px-2 py-2 shadow-lg">
+            {Object.values(modeConfigs).map(c => (
+              <button key={c.id} onClick={() => setMode(c.id)}
+                className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-200 ${
+                  mode === c.id ? `${c.twAccentLight} ${c.twAccentText}` : 'text-slate-400'
+                }`}
+              >
+                <span className="text-xl">{c.icon}</span>
+                <span className="text-[10px] font-medium">{c.name}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      )}
+    </>
   );
 }
