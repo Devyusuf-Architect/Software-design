@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Onboarding  from './components/Onboarding';
 import ModePanel   from './components/ModePanel';
 import ContentArea from './components/ContentArea';
@@ -21,50 +21,112 @@ When you feel calm and ready, you have full access to everything. All features, 
 
 This is your space. ClearPath meets you where you are.`;
 
+const SESSION_KEY = 'clearpath_session';
+
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+  catch { return null; }
+}
+
+function saveSession(data) {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ ...data, savedAt: Date.now() })); }
+  catch { /* ignore */ }
+}
+
 export default function App() {
-  const [onboardingComplete, setOnboardingComplete, clearOnboarding] = useLocalStorage('clearpath_onboarding', false);
-  const [preferences, setPreferences, clearPreferences]              = useLocalStorage('clearpath_prefs', null);
-  const [currentMode, setCurrentMode] = useState('calm');
-  const [text, setText]               = useState(DEMO_TEXT);
+  const [onboardingDone, setOnboardingDone, clearOnboarding] = useLocalStorage('clearpath_onboarding', false);
+  const [preferences,    setPreferences,    clearPreferences] = useLocalStorage('clearpath_prefs', null);
+
+  const [mode,      setMode]      = useState('calm');
+  const [text,      setText]      = useState(DEMO_TEXT);
+  const [resumeBanner, setResumeBanner] = useState(null); // { mode, savedAt }
+
+  // On first load, check for a saved session
+  useEffect(() => {
+    const session = loadSession();
+    if (session && session.mode && onboardingDone) {
+      setResumeBanner(session);
+    }
+  }, []); // eslint-disable-line
 
   const handleOnboardingComplete = (prefs) => {
     setPreferences(prefs);
-    setOnboardingComplete(true);
-    if (prefs.currentFeeling) setCurrentMode(prefs.currentFeeling);
+    setOnboardingDone(true);
+    if (prefs.currentFeeling) setMode(prefs.currentFeeling);
   };
 
   const handleResetOnboarding = () => {
     clearOnboarding();
     clearPreferences();
-    setCurrentMode('calm');
+    localStorage.removeItem(SESSION_KEY);
+    setMode('calm');
     setText(DEMO_TEXT);
+    setResumeBanner(null);
   };
 
-  if (!onboardingComplete) {
+  const handleSessionSave = () => {
+    saveSession({ mode, text: text !== DEMO_TEXT ? text : undefined });
+    // Brief visual feedback via the banner state
+    setResumeBanner({ mode, savedAt: Date.now(), justSaved: true });
+    setTimeout(() => setResumeBanner(null), 2500);
+  };
+
+  const handleResume = () => {
+    if (!resumeBanner) return;
+    setMode(resumeBanner.mode);
+    if (resumeBanner.text) setText(resumeBanner.text);
+    setResumeBanner(null);
+  };
+
+  if (!onboardingDone) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
-  const config = modeConfigs[currentMode];
+  const config = modeConfigs[mode];
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar — hidden on small screens */}
+    <div className="flex min-h-screen relative">
+
+      {/* Resume / saved banner */}
+      {resumeBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-slate-800 text-white rounded-2xl shadow-xl text-sm">
+          {resumeBanner.justSaved ? (
+            <>
+              <span className="text-green-400">✓</span>
+              <span>Session saved in <strong>{modeConfigs[resumeBanner.mode]?.name}</strong> mode</span>
+            </>
+          ) : (
+            <>
+              <span>Resume in <strong>{modeConfigs[resumeBanner.mode]?.name} {modeConfigs[resumeBanner.mode]?.icon}</strong> mode?</span>
+              <button onClick={handleResume} className="ml-1 bg-violet-500 hover:bg-violet-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors">
+                Resume
+              </button>
+              <button onClick={() => setResumeBanner(null)} className="text-slate-400 hover:text-white transition-colors text-xs px-1">
+                ✕
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
       <div className="hidden lg:block">
         <ModePanel
-          currentMode={currentMode}
-          onModeChange={setCurrentMode}
+          currentMode={mode}
+          onModeChange={setMode}
           onResetOnboarding={handleResetOnboarding}
         />
       </div>
 
       {/* Main content */}
       <ContentArea
-        mode={currentMode}
+        mode={mode}
         text={text}
         onTextChange={setText}
         config={config}
-        onModeChange={setCurrentMode}
+        onModeChange={setMode}
         preferences={preferences}
+        onSessionSave={handleSessionSave}
       />
 
       {/* Mobile bottom mode bar */}
@@ -72,9 +134,9 @@ export default function App() {
         {Object.values(modeConfigs).map(c => (
           <button
             key={c.id}
-            onClick={() => setCurrentMode(c.id)}
+            onClick={() => setMode(c.id)}
             className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-200 ${
-              currentMode === c.id ? `${c.twAccentLight} ${c.twAccentText}` : 'text-slate-400'
+              mode === c.id ? `${c.twAccentLight} ${c.twAccentText}` : 'text-slate-400'
             }`}
           >
             <span className="text-xl">{c.icon}</span>
