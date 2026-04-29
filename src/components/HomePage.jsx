@@ -71,7 +71,7 @@ function useScrollFade() {
 }
 
 /* ── Navbar ────────────────────────────────────────────────────── */
-function Navbar({ onSignIn, onGetStarted }) {
+function Navbar({ onSignIn, onGetStarted, onTryDemo }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -106,6 +106,12 @@ function Navbar({ onSignIn, onGetStarted }) {
             Sign in
           </button>
           <button
+            onClick={onTryDemo}
+            className="text-sm font-semibold border-2 border-violet-200 text-violet-600 hover:border-violet-400 hover:text-violet-700 px-5 py-2 rounded-xl transition-all duration-200 hover:bg-violet-50"
+          >
+            Try Demo
+          </button>
+          <button
             onClick={onGetStarted}
             className="text-sm font-semibold bg-violet-500 hover:bg-violet-600 text-white px-5 py-2 rounded-xl transition-all duration-200 shadow-md shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5"
           >
@@ -118,13 +124,13 @@ function Navbar({ onSignIn, onGetStarted }) {
 }
 
 /* ── HomePage ──────────────────────────────────────────────────── */
-export default function HomePage({ onGetStarted, onSignIn }) {
+export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
   const fade = useScrollFade();
   let fi = 0; // fade index counter
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      <Navbar onSignIn={onSignIn} onGetStarted={onGetStarted} />
+      <Navbar onSignIn={onSignIn} onGetStarted={onGetStarted} onTryDemo={onTryDemo} />
 
       {/* ── HERO ──────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
@@ -136,34 +142,40 @@ export default function HomePage({ onGetStarted, onSignIn }) {
         <div className="relative max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center py-24">
           {/* Left — text */}
           <div>
-            <div className="hero-in-0 inline-flex items-center gap-2 bg-violet-100 text-violet-700 text-xs font-semibold px-4 py-2 rounded-full mb-6">
-              <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
-              Adapts to how you feel, not the other way around
+            <div className="hero-in-0 flex flex-wrap items-center gap-2 mb-6">
+              <div className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 text-xs font-semibold px-4 py-2 rounded-full">
+                <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
+                Adapts to how you feel, not the other way around
+              </div>
+              <div className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 text-xs font-mono font-semibold px-3 py-2 rounded-full">
+                Powered by ODAI
+              </div>
             </div>
 
             <h1 className="hero-in-1 text-5xl lg:text-6xl font-bold text-slate-900 leading-[1.08] tracking-tight mb-6">
-              Take back control of your{' '}
-              <span className="gradient-text">digital experience</span>
+              Stressful pages made{' '}
+              <span className="gradient-text">easy to complete</span>
             </h1>
 
             <p className="hero-in-2 text-lg text-slate-500 leading-relaxed mb-8 max-w-lg">
-              ClearPath transforms content based on how you feel right now — reducing
-              cognitive load, improving focus, and making every task easier to complete.
+              ClearPath uses ODAI to transform confusing, overwhelming content
+              based on how you feel right now — reducing cognitive load and making
+              every task easier to act on.
             </p>
 
             <div className="hero-in-3 flex flex-wrap gap-3 mb-8">
               <button
-                onClick={onGetStarted}
+                onClick={onTryDemo}
                 className="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 shadow-xl shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5 text-sm"
               >
-                Get started free
+                Try Demo — see it live
                 <span className="text-violet-200">→</span>
               </button>
               <button
-                onClick={onSignIn}
+                onClick={onGetStarted}
                 className="inline-flex items-center gap-2 border-2 border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 hover:bg-slate-50 text-sm"
               >
-                Sign in
+                Get started free
               </button>
             </div>
 
@@ -342,24 +354,24 @@ export default function HomePage({ onGetStarted, onSignIn }) {
           <div className="text-5xl mb-6">🌿</div>
           <h2 className="text-4xl font-bold text-slate-900 mb-4">Ready to take back control?</h2>
           <p className="text-slate-500 text-lg mb-10 leading-relaxed">
-            Start in seconds. No account needed. No diagnosis required.
-            Just select how you feel and let ClearPath do the rest.
+            See ClearPath in action on a real stressful page — then start using it
+            on any content. No account needed. No diagnosis required.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <button
-              onClick={onGetStarted}
+              onClick={onTryDemo}
               className="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white font-semibold px-8 py-4 rounded-2xl transition-all duration-200 shadow-xl shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5 text-base"
             >
-              Get started free →
+              Try Demo →
             </button>
             <button
-              onClick={onSignIn}
+              onClick={onGetStarted}
               className="inline-flex items-center gap-2 border-2 border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold px-8 py-4 rounded-2xl transition-all duration-200 hover:bg-slate-50 text-base"
             >
-              Sign in to your account
+              Get started free
             </button>
           </div>
-          <p className="text-xs text-slate-300 mt-6">Free forever · Data stays on your device · No diagnosis</p>
+          <p className="text-xs text-slate-300 mt-6">Powered by ODAI · Free forever · Data stays on your device · No diagnosis</p>
         </div>
       </section>
 

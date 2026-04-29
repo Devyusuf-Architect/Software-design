@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import HomePage    from './components/HomePage';
-import Onboarding  from './components/Onboarding';
-import ModePanel   from './components/ModePanel';
-import ContentArea from './components/ContentArea';
-import AuthModal   from './components/auth/AuthModal';
+import HomePage       from './components/HomePage';
+import Onboarding     from './components/Onboarding';
+import ModePanel      from './components/ModePanel';
+import ContentArea    from './components/ContentArea';
+import AuthModal      from './components/auth/AuthModal';
+import DemoWorkspace  from './components/DemoWorkspace';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth }         from './hooks/useAuth';
 import { modeConfigs }     from './utils/modeConfigs';
@@ -53,6 +54,9 @@ export default function App() {
       setView(onboardingDone ? 'app' : 'onboarding');
     }
   }, [user]); // eslint-disable-line
+
+  /* ── Try Demo ───────────────────────────────────────────── */
+  const handleTryDemo = () => setView('demo');
 
   // Check for saved session on app load
   useEffect(() => {
@@ -127,7 +131,13 @@ export default function App() {
         <HomePage
           onGetStarted={() => setView('onboarding')}
           onSignIn={() => setAuthModal('signin')}
+          onTryDemo={handleTryDemo}
         />
+      )}
+
+      {/* Demo workspace */}
+      {view === 'demo' && (
+        <DemoWorkspace onExit={() => setView('home')} />
       )}
 
       {/* Onboarding */}
