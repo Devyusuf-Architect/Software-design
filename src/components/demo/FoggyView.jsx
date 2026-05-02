@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NOTICE, TASK_STEPS } from '../../data/demoContent';
 import { useSpeech } from '../../hooks/useSpeech';
 
-const SECTIONS = [
+const DEFAULT_SECTIONS = [
   {
     id: 'amount',
     title: '💰 Amount you owe',
@@ -43,7 +43,9 @@ function BoldText({ text }) {
   );
 }
 
-export default function FoggyView({ step, onStepChange }) {
+export default function FoggyView({ step, onStepChange, sections: sectionsProp, taskSteps }) {
+  const SECTIONS   = sectionsProp || DEFAULT_SECTIONS;
+  const taskStepsFinal = taskSteps || TASK_STEPS;
   const [readAgainKey, setReadAgainKey] = useState({});
   const { speak, stop, isSpeaking, isSupported } = useSpeech();
 
@@ -130,7 +132,7 @@ export default function FoggyView({ step, onStepChange }) {
         >
           ← Back
         </button>
-        {step < TASK_STEPS.length - 1 ? (
+        {step < taskStepsFinal.length - 1 ? (
           <button
             onClick={() => onStepChange(step + 1)}
             className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-amber-200 transition-all"
@@ -142,10 +144,10 @@ export default function FoggyView({ step, onStepChange }) {
         )}
       </div>
 
-      {step === TASK_STEPS.length - 1 && (
+      {step === taskStepsFinal.length - 1 && (
         <div className="mt-5 p-4 bg-amber-100 border border-amber-200 rounded-2xl text-center">
           <p className="text-amber-800 font-semibold text-sm">
-            {TASK_STEPS[TASK_STEPS.length - 1].completion}
+            {taskStepsFinal[taskStepsFinal.length - 1].completion}
           </p>
         </div>
       )}

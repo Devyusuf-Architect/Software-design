@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SIMPLIFY_OUTPUT } from '../../data/demoContent';
+import { SIMPLIFY_OUTPUT as DEFAULT_OUTPUT } from '../../data/demoContent';
 
 const TABS = [
   { id: 'simple',  label: 'Simple version', icon: '💬' },
@@ -7,8 +7,9 @@ const TABS = [
   { id: 'action',  label: 'What to do',      icon: '🎯' },
 ];
 
-export default function SimplifyOutput({ onClose, accentHex = '#7C3AED', accentLight = '#EDE9FE' }) {
+export default function SimplifyOutput({ onClose, accentHex = '#7C3AED', accentLight = '#EDE9FE', simplifyOutput }) {
   const [tab, setTab] = useState('simple');
+  const data = simplifyOutput || DEFAULT_OUTPUT;
 
   return (
     <div className="mt-4 rounded-2xl border-2 overflow-hidden" style={{ borderColor: accentHex + '40' }}>
@@ -39,11 +40,11 @@ export default function SimplifyOutput({ onClose, accentHex = '#7C3AED', accentL
       {/* Content */}
       <div className="p-4 bg-white">
         {tab === 'simple' && (
-          <p className="text-sm text-slate-700 leading-relaxed">{SIMPLIFY_OUTPUT.simple}</p>
+          <p className="text-sm text-slate-700 leading-relaxed">{data.simple}</p>
         )}
         {tab === 'bullets' && (
           <ul className="space-y-2">
-            {SIMPLIFY_OUTPUT.bullets.map((b, i) => (
+            {data.bullets.map((b, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
                 <span className="mt-1 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold"
                   style={{ backgroundColor: accentHex }}>
@@ -59,7 +60,7 @@ export default function SimplifyOutput({ onClose, accentHex = '#7C3AED', accentL
             <p className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: accentHex }}>
               What you need to do
             </p>
-            <p className="text-sm text-slate-700 leading-relaxed">{SIMPLIFY_OUTPUT.action}</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{data.action}</p>
           </div>
         )}
       </div>

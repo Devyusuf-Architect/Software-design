@@ -1,9 +1,10 @@
 import { TASK_STEPS } from '../../data/demoContent';
 
-export default function OverwhelmedView({ step, onStepChange }) {
-  const current = TASK_STEPS[Math.min(step, TASK_STEPS.length - 1)];
-  const isLast  = step >= TASK_STEPS.length - 1;
-  const pct     = Math.round(((step + 1) / TASK_STEPS.length) * 100);
+export default function OverwhelmedView({ step, onStepChange, taskSteps }) {
+  const steps   = taskSteps || TASK_STEPS;
+  const current = steps[Math.min(step, steps.length - 1)];
+  const isLast  = step >= steps.length - 1;
+  const pct     = Math.round(((step + 1) / steps.length) * 100);
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center py-12 px-6">
@@ -24,7 +25,7 @@ export default function OverwhelmedView({ step, onStepChange }) {
         </div>
 
         <p className="text-xs font-bold uppercase tracking-widest text-violet-300 mb-2">
-          Step {step + 1} of {TASK_STEPS.length}
+          Step {step + 1} of {steps.length}
         </p>
 
         <h2 className="text-3xl font-light text-violet-900 mb-3 leading-tight">
@@ -49,14 +50,14 @@ export default function OverwhelmedView({ step, onStepChange }) {
         <button
           onClick={() => onStepChange(step - 1)}
           disabled={step === 0}
-          className="px-6 py-3 rounded-xl border-2 border-violet-200 text-violet-600 text-sm font-medium disabled:opacity-30 hover:bg-violet-50 transition-all"
+          className="px-6 py-3 rounded-xl border-2 border-violet-200 text-violet-600 text-sm font-medium disabled:opacity-30 hover:bg-violet-50 btn-micro transition-all"
         >
           ← Back
         </button>
 
         {/* Dots */}
         <div className="flex gap-1.5">
-          {TASK_STEPS.map((_, i) => (
+          {steps.map((_, i) => (
             <div key={i}
               className={`rounded-full transition-all duration-300 ${
                 i === step       ? 'bg-violet-500 w-6 h-2'
@@ -74,7 +75,7 @@ export default function OverwhelmedView({ step, onStepChange }) {
         ) : (
           <button
             onClick={() => onStepChange(step + 1)}
-            className="px-6 py-3 rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold shadow-md shadow-violet-200 transition-all"
+            className="px-6 py-3 rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold shadow-md shadow-violet-200 btn-micro transition-all"
           >
             Next →
           </button>
@@ -90,10 +91,10 @@ export default function OverwhelmedView({ step, onStepChange }) {
         <p className="text-center text-xs text-violet-300 mt-1.5">{pct}% of task reviewed</p>
       </div>
 
-      {step === TASK_STEPS.length - 1 && (
+      {step === steps.length - 1 && (
         <div className="mt-6 p-4 bg-violet-100 rounded-2xl text-center max-w-lg w-full border border-violet-200">
           <p className="text-violet-700 font-semibold">
-            {TASK_STEPS[TASK_STEPS.length - 1].completion}
+            {steps[steps.length - 1].completion}
           </p>
         </div>
       )}

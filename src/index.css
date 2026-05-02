@@ -162,3 +162,78 @@ body {
 
 /* Smooth scroll */
 html { scroll-behavior: smooth; }
+
+/* ══════════════════════════════════════════════════════════
+   MICRO-INTERACTIONS
+   ══════════════════════════════════════════════════════════ */
+
+/* Subtle button press */
+.btn-micro {
+  transition: transform 0.15s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.15s ease,
+              background-color 0.15s ease;
+}
+.btn-micro:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.btn-micro:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Section highlight pulse (for completion sections) */
+@keyframes sectionPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(99,102,241,0.25); }
+  70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+.section-highlight {
+  animation: sectionPulse 0.8s ease-out forwards;
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.2s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* Slide-in for new content panels */
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-in-up {
+  animation: slideInUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
+/* Fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* Mode card active highlight */
+@keyframes modeCardIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.mode-card-enter { animation: modeCardIn 0.25s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+/* Confidence bar pulse on increase */
+@keyframes confidencePulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+.confidence-pulse { animation: confidencePulse 0.5s ease; }
+
+/* Session summary modal entrance */
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-enter { animation: modalIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }

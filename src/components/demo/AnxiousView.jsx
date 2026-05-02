@@ -1,6 +1,6 @@
 import { NOTICE, TASK_STEPS } from '../../data/demoContent';
 
-const CALM_SECTIONS = [
+const DEFAULT_CALM_SECTIONS = [
   {
     id: 'intro',
     label: 'What this notice is about',
@@ -28,7 +28,9 @@ const CALM_SECTIONS = [
   },
 ];
 
-export default function AnxiousView({ step, onStepChange, onModeChange }) {
+export default function AnxiousView({ step, onStepChange, onModeChange, calmSections, taskSteps }) {
+  const CALM_SECTIONS  = calmSections || DEFAULT_CALM_SECTIONS;
+  const taskStepsFinal = taskSteps    || TASK_STEPS;
   return (
     <div className="max-w-2xl mx-auto px-6 py-6">
 
@@ -114,7 +116,7 @@ export default function AnxiousView({ step, onStepChange, onModeChange }) {
         >
           ← Back
         </button>
-        {step < TASK_STEPS.length - 1 ? (
+        {step < taskStepsFinal.length - 1 ? (
           <button
             onClick={() => onStepChange(step + 1)}
             className="px-5 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-teal-200 transition-all"
@@ -126,7 +128,7 @@ export default function AnxiousView({ step, onStepChange, onModeChange }) {
         )}
       </div>
 
-      {step === TASK_STEPS.length - 1 && (
+      {step === taskStepsFinal.length - 1 && (
         <div className="mt-5 p-4 bg-teal-100 border border-teal-200 rounded-2xl text-center">
           <p className="text-teal-800 font-semibold text-sm">You have reviewed everything. Well done.</p>
           <p className="text-teal-600 text-xs mt-1">Nothing has been submitted. You are still in control.</p>

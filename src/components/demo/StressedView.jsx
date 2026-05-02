@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { TASK_STEPS, STRESSED_ENCOURAGEMENTS } from '../../data/demoContent';
 
-export default function StressedView({ step, onStepChange }) {
+export default function StressedView({ step, onStepChange, taskSteps, encouragements }) {
+  const steps  = taskSteps    || TASK_STEPS;
+  const encArr = encouragements || STRESSED_ENCOURAGEMENTS;
   const [flash, setFlash] = useState('');
 
   const handleComplete = (targetStep) => {
-    if (targetStep !== step) return; // only allow clicking the current step
-    const msg = STRESSED_ENCOURAGEMENTS[Math.min(step, STRESSED_ENCOURAGEMENTS.length - 1)];
+    if (targetStep !== step) return;
+    const msg = encArr[Math.min(step, encArr.length - 1)];
     setFlash(msg);
     setTimeout(() => { setFlash(''); onStepChange(step + 1); }, 1600);
   };
 
-  const pct = Math.round(((step) / TASK_STEPS.length) * 100);
+  const pct = Math.round(((step) / steps.length) * 100);
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-6">
@@ -20,7 +22,7 @@ export default function StressedView({ step, onStepChange }) {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <p className="text-green-700 text-sm font-semibold">
-            {step} of {TASK_STEPS.length} steps done
+            {step} of {steps.length} steps done
             {step > 0 && <span className="ml-2 text-green-400 font-normal">· {pct}% complete</span>}
           </p>
           {flash && (
@@ -41,17 +43,17 @@ export default function StressedView({ step, onStepChange }) {
       </p>
 
       {/* Next step banner */}
-      {step < TASK_STEPS.length && (
+      {step < steps.length && (
         <div className="mb-5 p-4 bg-green-100 border-2 border-green-300 rounded-2xl">
           <p className="text-[10px] text-green-500 uppercase tracking-widest font-bold mb-1">Now focus on</p>
-          <p className="text-green-900 font-semibold text-base">{TASK_STEPS[step].title}</p>
-          <p className="text-green-700 text-sm mt-1">{TASK_STEPS[step].tip}</p>
+          <p className="text-green-900 font-semibold text-base">{steps[step].title}</p>
+          <p className="text-green-700 text-sm mt-1">{steps[step].tip}</p>
         </div>
       )}
 
       {/* Checklist */}
       <div className="space-y-2.5">
-        {TASK_STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const done    = i < step;
           const current = i === step;
           const locked  = i > step;
@@ -104,7 +106,7 @@ export default function StressedView({ step, onStepChange }) {
       </div>
 
       {/* Back */}
-      {step > 0 && step < TASK_STEPS.length && (
+      {step > 0 && step < steps.length && (
         <button
           onClick={() => onStepChange(step - 1)}
           className="mt-4 text-sm text-green-400 hover:text-green-600 transition-colors"
@@ -114,11 +116,11 @@ export default function StressedView({ step, onStepChange }) {
       )}
 
       {/* All done */}
-      {step >= TASK_STEPS.length && (
+      {step >= steps.length && (
         <div className="mt-6 p-5 bg-green-100 border border-green-200 rounded-2xl text-center">
           <p className="text-2xl mb-2">🌱</p>
           <p className="text-green-700 font-bold text-base">
-            {TASK_STEPS[TASK_STEPS.length - 1].completion}
+            {steps[steps.length - 1].completion}
           </p>
           <p className="text-green-500 text-sm mt-1">Every step is done. That took real effort.</p>
         </div>

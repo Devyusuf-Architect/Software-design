@@ -1,9 +1,9 @@
 import { modeConfigs } from '../../utils/modeConfigs';
-import { MODE_MESSAGES } from '../../data/demoContent';
+import { MODE_MESSAGES as DEFAULT_MESSAGES } from '../../data/demoContent';
 
-export default function TransitionOverlay({ mode, visible }) {
+export default function TransitionOverlay({ mode, visible, modeMessages }) {
   const cfg = modeConfigs[mode];
-  const msg = MODE_MESSAGES[mode];
+  const msg = (modeMessages || DEFAULT_MESSAGES)[mode];
 
   return (
     <div
