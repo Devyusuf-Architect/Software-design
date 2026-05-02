@@ -1,20 +1,22 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { SCENARIO_LIST, SCENARIOS } from '../data/scenarios';
 import { modeConfigs } from '../utils/modeConfigs';
 import { useSpeech } from '../hooks/useSpeech';
-import ControlPanel       from './ControlPanel';
-import TransitionOverlay  from './demo/TransitionOverlay';
-import StatusCard         from './demo/StatusCard';
-import SimplifyOutput     from './demo/SimplifyOutput';
-import ScenarioSelector   from './demo/ScenarioSelector';
-import CognitiveLoadMeter from './demo/CognitiveLoadMeter';
-import SessionSummary     from './demo/SessionSummary';
-import OriginalContent    from './demo/OriginalContent';
-import OverwhelmedView    from './demo/OverwhelmedView';
-import FoggyView          from './demo/FoggyView';
-import AnxiousView        from './demo/AnxiousView';
-import StressedView       from './demo/StressedView';
-import CalmView           from './demo/CalmView';
+import ControlPanel        from './ControlPanel';
+import TransitionOverlay   from './demo/TransitionOverlay';
+import StatusCard          from './demo/StatusCard';
+import SimplifyOutput      from './demo/SimplifyOutput';
+import ScenarioSelector    from './demo/ScenarioSelector';
+import CognitiveLoadMeter  from './demo/CognitiveLoadMeter';
+import SessionSummary      from './demo/SessionSummary';
+import OriginalContent     from './demo/OriginalContent';
+import OverwhelmedView     from './demo/OverwhelmedView';
+import FoggyView           from './demo/FoggyView';
+import AnxiousView         from './demo/AnxiousView';
+import StressedView        from './demo/StressedView';
+import CalmView            from './demo/CalmView';
+import WordDefinitionPopup from './demo/WordDefinitionPopup';
+import PreferencePopup, { loadPreferences, savePreferences } from './demo/PreferencePopup';
 
 const DEMO_SESSION_KEY = 'clearpath_demo_session';
 
@@ -29,10 +31,25 @@ export default function DemoWorkspace({ onExit }) {
   const [showSummary,     setShowSummary]     = useState(false);
   const [showFocusTimer,  setShowFocusTimer]  = useState(false);
   const [savedBanner,     setSavedBanner]     = useState(false);
+  const [showPrefs,       setShowPrefs]       = useState(false);
   const [startTime]                           = useState(Date.now());
+
+  const contentRef = useRef(null);
 
   const scenario = SCENARIOS[scenarioId] || SCENARIOS.payment;
   const cfg      = modeConfigs[mode];
+
+  // Show preference popup on first demo visit
+  useEffect(() => {
+    const prefs = loadPreferences();
+    if (!prefs) {
+      setShowPrefs(true);
+    } else if (prefs.feeling && prefs.feeling !== mode) {
+      setMode(prefs.feeling);
+      setHasSelectedMode(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const cognitiveLoad = useMemo(() => {
     const level = scenario.cognitiveLoad || 'medium';
@@ -42,7 +59,7 @@ export default function DemoWorkspace({ onExit }) {
     };
   }, [scenario]);
 
-  const { speak, stop, isSpeaking, isSupported } = useSpeech();
+  const { speak, stop, isSpeaking, isSupported, voices, activeVoice, setActiveVoice } = useSpeech();
 
   /* ── Scenario change ──────────────────────────────────── */
   const handleScenarioChange = (id) => {
@@ -69,11 +86,20 @@ export default function DemoWorkspace({ onExit }) {
     setTimeout(() => setIsTransitioning(false), 900);
   }, [mode, isTransitioning, stop]);
 
-  /* ── Read aloud ──────────────────────────────────────── */
+  /* ── Preference popup complete ───────────────────────── */
+  const handlePrefsComplete = (prefs) => {
+    setShowPrefs(false);
+    if (prefs.feeling) {
+      setMode(prefs.feeling);
+      setHasSelectedMode(true);
+    }
+  };
+
+  /* ── Read aloud — pass mode for voice settings ───────── */
   const handleReadAloud = () => {
     if (isSpeaking) { stop(); return; }
     const text = scenario.simplifyOutput?.simple || '';
-    if (isSupported && text) speak(text, 0.85);
+    if (isSupported && text) speak(text, undefined, mode);
   };
 
   /* ── Save demo progress ──────────────────────────────── */
@@ -101,7 +127,7 @@ export default function DemoWorkspace({ onExit }) {
   };
 
   /* ── Step navigation ─────────────────────────────────── */
-  const stepCount   = scenario.taskSteps?.length || 5;
+  const stepCount      = scenario.taskSteps?.length || 5;
   const handleNextStep = () => setStep(s => Math.min(s + 1, stepCount));
   const handlePrevStep = () => setStep(s => Math.max(s - 1, 0));
 
@@ -131,6 +157,12 @@ export default function DemoWorkspace({ onExit }) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
+
+      {/* ── Preference popup ────────────────────────────── */}
+      {showPrefs && <PreferencePopup onComplete={handlePrefsComplete} />}
+
+      {/* ── Word definition popup (listens on content area) */}
+      <WordDefinitionPopup containerRef={contentRef} />
 
       {/* ── Top bar ──────────────────────────────────────── */}
       <div className="flex-shrink-0 bg-white border-b border-slate-100">
@@ -230,8 +262,9 @@ export default function DemoWorkspace({ onExit }) {
             </div>
           )}
 
-          {/* Scrollable content */}
+          {/* Scrollable content — ref used by WordDefinitionPopup */}
           <div
+            ref={contentRef}
             className="flex-1 overflow-y-auto relative transition-colors duration-500"
             style={{ backgroundColor: cfg.hex.bg }}
           >
@@ -298,6 +331,9 @@ export default function DemoWorkspace({ onExit }) {
             isSpeaking={isSpeaking}
             showCompare={showCompare}
             startTime={startTime}
+            voices={voices}
+            activeVoice={activeVoice}
+            onVoiceChange={setActiveVoice}
           />
         </div>
       </div>

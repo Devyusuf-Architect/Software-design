@@ -28,6 +28,9 @@ export default function ControlPanel({
   isTransitioning,
   isSpeaking,
   showCompare,
+  voices = [],
+  activeVoice,
+  onVoiceChange,
 }) {
   const current = MODES.find(m => m.id === mode) || MODES[4];
 
@@ -186,6 +189,25 @@ export default function ControlPanel({
           className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-400 text-sm hover:bg-slate-50 btn-micro transition-all">
           <span>↺</span><span>Reset Demo</span>
         </button>
+
+        {/* Voice selector — only shown when multiple voices are available */}
+        {voices.length > 1 && (
+          <div>
+            <p className="text-[10px] text-slate-400 mb-1 mt-1">🔊 Voice</p>
+            <select
+              value={activeVoice?.name || ''}
+              onChange={e => {
+                const v = voices.find(v => v.name === e.target.value);
+                if (v) onVoiceChange(v);
+              }}
+              className="w-full text-xs border border-slate-200 rounded-xl px-2.5 py-2 text-slate-600 bg-white focus:outline-none focus:border-slate-400"
+            >
+              {voices.map(v => (
+                <option key={v.name} value={v.name}>{v.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Why this helps */}
