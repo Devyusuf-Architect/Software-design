@@ -1,43 +1,15 @@
-name: Build ClearPath Desktop
+name: Build ClearPath Desktop (Windows)
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      release_draft:
-        description: 'Create a draft release (tag pushes only)'
-        required: false
-        default: 'true'
-        type: boolean
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # macOS — universal binary (Intel + Apple Silicon)
-          - platform: macos-latest
-            args: '--target universal-apple-darwin'
-            rust_targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
-            label: macOS
-
-          # Windows — 64-bit
-          - platform: windows-latest
-            args: ''
-            rust_targets: ''
-            label: Windows
-
-          # Linux — 64-bit (AppImage + .deb)
-          - platform: ubuntu-22.04
-            args: ''
-            rust_targets: ''
-            label: Linux
-
-    runs-on: ${{ matrix.platform }}
-    name: Build — ${{ matrix.label }}
+  build-windows:
+    runs-on: windows-latest
+    name: Build — Windows
 
     steps:
       - name: Checkout
@@ -51,78 +23,24 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust_targets }}
 
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
 
-      # Linux build dependencies
-      - name: Install Linux system dependencies
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            libxdo-dev \
-            libssl-dev
-
       - name: Install Node dependencies
         run: npm install
 
-      # Tag push: build + create GitHub release
-      - name: Build Tauri app (release)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'ClearPath ${{ github.ref_name }}'
-          releaseBody: |
-            ## ClearPath ${{ github.ref_name }}
+      - name: Build Tauri app
+        run: npm run tauri:build
 
-            ### Downloads
-            | Platform | File |
-            |----------|------|
-            | macOS (Universal) | `.dmg` |
-            | Windows | `.msi` or `.exe` |
-            | Linux | `.AppImage` or `.deb` |
-
-            ### Install
-            - **macOS**: Open the `.dmg`, drag ClearPath to Applications
-            - **Windows**: Run the `.msi` installer
-            - **Linux**: Run the `.AppImage` directly, or install the `.deb`
-          releaseDraft: ${{ github.event.inputs.release_draft != 'false' }}
-          prerelease: false
-          args: ${{ matrix.args }}
-
-      # workflow_dispatch or non-tag push: build only, no release
-      - name: Build Tauri app (no release)
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: ${{ matrix.args }}
-
-      # Upload artifacts — available for 7 days regardless of trigger
-      - name: Upload build artifacts
+      - name: Upload Windows installers
         uses: actions/upload-artifact@v4
         with:
-          name: clearpath-${{ matrix.label }}
-          retention-days: 7
+          name: clearpath-windows
+          retention-days: 30
           path: |
-            src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/release/bundle/macos/*.app
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
-          if-no-files-found: warn
+          if-no-files-found: error
