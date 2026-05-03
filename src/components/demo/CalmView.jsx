@@ -48,14 +48,14 @@ export default function CalmView({ step, onStepChange, scenario }) {
       <div style={{ zoom: ZOOM[fontSize] }}>
 
         {/* Summary card */}
-        <div className="mb-5 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <div className="mb-5 p-5 bg-white border border-slate-200 rounded-2xl card-depth">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Summary</p>
           <p className="text-slate-700 text-base leading-relaxed">{summary}</p>
         </div>
 
         {/* Key points */}
         {bullets.length > 0 && (
-          <div className="mb-5 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+          <div className="mb-5 p-5 bg-white border border-slate-200 rounded-2xl card-depth">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Key Points</p>
             <ul className="space-y-2">
               {bullets.map((b, i) => (
@@ -102,7 +102,7 @@ export default function CalmView({ step, onStepChange, scenario }) {
                       onClick={() => !done && onStepChange(i)}
                       className={`w-full flex items-start gap-3 px-4 py-3 rounded-2xl border text-left transition-all btn-micro ${
                         done    ? 'border-green-200 bg-green-50 opacity-70'
-                        : current ? 'border-indigo-300 bg-indigo-50 shadow-sm'
+                        : current ? 'border-indigo-300 bg-indigo-50 card-depth'
                         :           'border-slate-100 bg-white hover:border-slate-200'
                       }`}
                     >

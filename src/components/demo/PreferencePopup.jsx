@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { modeConfigs } from '../../utils/modeConfigs';
 
 const FEELINGS = [
   { id: 'overwhelmed', icon: '🌸', label: 'Overwhelmed',  sub: 'Too much at once' },
@@ -80,7 +81,7 @@ export default function PreferencePopup({ onComplete }) {
       >
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-violet-100 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+          <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
             🌿
           </div>
           <h2 className="text-xl font-bold text-slate-800">Welcome to ClearPath</h2>
@@ -94,30 +95,28 @@ export default function PreferencePopup({ onComplete }) {
         {/* Step 0 — Feeling picker */}
         {step === 0 && (
           <div className="grid grid-cols-1 gap-2">
-            {FEELINGS.map(f => (
-              <button
-                key={f.id}
-                onClick={() => handleFeelingSelect(f.id)}
-                className={`flex items-center gap-4 w-full px-4 py-3 rounded-2xl border-2 text-left transition-all duration-150 btn-micro ${
-                  feeling === f.id
-                    ? 'border-violet-400 bg-violet-50 shadow-sm'
-                    : 'border-slate-100 bg-white hover:border-slate-300'
-                }`}
-              >
-                <span className="text-2xl">{f.icon}</span>
-                <div>
-                  <p className={`text-sm font-semibold ${feeling === f.id ? 'text-violet-800' : 'text-slate-700'}`}>
-                    {f.label}
-                  </p>
-                  <p className={`text-xs ${feeling === f.id ? 'text-violet-500' : 'text-slate-400'}`}>
-                    {f.sub}
-                  </p>
-                </div>
-                {feeling === f.id && (
-                  <span className="ml-auto text-violet-500 text-lg">✓</span>
-                )}
-              </button>
-            ))}
+            {FEELINGS.map(f => {
+              const mc = modeConfigs[f.id];
+              const active = feeling === f.id;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => handleFeelingSelect(f.id)}
+                  className="flex items-center gap-4 w-full px-4 py-3 rounded-2xl border-2 text-left transition-all duration-150 btn-micro"
+                  style={active
+                    ? { borderColor: mc.hex.accent, background: mc.hex.accentLight, boxShadow: `0 2px 8px ${mc.hex.accent}20` }
+                    : { borderColor: '#E2E8F0', background: '#fff' }
+                  }
+                >
+                  <span className="text-2xl">{f.icon}</span>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: active ? mc.hex.text : '#374151' }}>{f.label}</p>
+                    <p className="text-xs" style={{ color: active ? mc.hex.accent : '#9CA3AF' }}>{f.sub}</p>
+                  </div>
+                  {active && <span className="ml-auto text-lg" style={{ color: mc.hex.accent }}>✓</span>}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -132,11 +131,11 @@ export default function PreferencePopup({ onComplete }) {
                     <button
                       key={opt.id}
                       onClick={() => handleAnswer(pref.id, opt.id)}
-                      className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all btn-micro ${
-                        answers[pref.id] === opt.id
-                          ? 'border-violet-400 bg-violet-50 text-violet-800'
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
+                      className="px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all btn-micro"
+                      style={answers[pref.id] === opt.id
+                        ? { borderColor: '#475569', background: '#1E293B', color: '#fff' }
+                        : { borderColor: '#E2E8F0', color: '#4B5563' }
+                      }
                     >
                       {opt.label}
                     </button>
@@ -149,16 +148,14 @@ export default function PreferencePopup({ onComplete }) {
 
         {/* Actions */}
         <div className="flex items-center justify-between mt-7">
-          <button
-            onClick={handleSkip}
-            className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
-          >
+          <button onClick={handleSkip} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">
             Skip for now
           </button>
           <button
             onClick={handleNext}
             disabled={step === 0 && !feeling}
-            className="px-6 py-2.5 bg-violet-500 hover:bg-violet-600 disabled:opacity-40 text-white text-sm font-semibold rounded-xl shadow-md shadow-violet-200 transition-all btn-micro"
+            className="px-6 py-2.5 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-all btn-micro"
+            style={{ background: '#1E293B', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
           >
             {step === 0 ? 'Continue →' : 'Start ClearPath →'}
           </button>
@@ -167,11 +164,8 @@ export default function PreferencePopup({ onComplete }) {
         {/* Step dots */}
         <div className="flex justify-center gap-1.5 mt-5">
           {[0, 1].map(i => (
-            <div
-              key={i}
-              className={`rounded-full transition-all duration-300 ${
-                i === step ? 'bg-violet-400 w-5 h-1.5' : 'bg-slate-200 w-1.5 h-1.5'
-              }`}
+            <div key={i} className="rounded-full transition-all duration-300"
+              style={{ width: i === step ? 20 : 6, height: 6, background: i === step ? '#475569' : '#E2E8F0' }}
             />
           ))}
         </div>

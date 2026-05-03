@@ -18,10 +18,10 @@ import CalmView            from './demo/CalmView';
 import WordDefinitionPopup from './demo/WordDefinitionPopup';
 import PreferencePopup, { loadPreferences } from './demo/PreferencePopup';
 
-const DEMO_SESSION_KEY  = 'clearpath_demo_session';
-const PANEL_MIN         = 180;
-const PANEL_MAX         = 480;
-const PANEL_DEFAULT     = 240;
+const DEMO_SESSION_KEY = 'clearpath_demo_session';
+const PANEL_MIN        = 180;
+const PANEL_MAX        = 480;
+const PANEL_DEFAULT    = 240;
 
 export default function DemoWorkspace({ onExit }) {
   const [scenarioId,      setScenarioId]      = useState('payment');
@@ -36,7 +36,7 @@ export default function DemoWorkspace({ onExit }) {
   const [savedBanner,     setSavedBanner]     = useState(false);
   const [showPrefs,       setShowPrefs]       = useState(false);
   const [panelWidth,      setPanelWidth]      = useState(PANEL_DEFAULT);
-  const [panelStyle,      setPanelStyle]      = useState('simple'); // 'simple' | 'full'
+  const [panelStyle,      setPanelStyle]      = useState('simple');
   const [startTime]                           = useState(Date.now());
 
   const contentRef  = useRef(null);
@@ -45,16 +45,20 @@ export default function DemoWorkspace({ onExit }) {
   const dragStartW  = useRef(PANEL_DEFAULT);
 
   const scenario = SCENARIOS[scenarioId] || SCENARIOS.payment;
-  const cfg      = modeConfigs[mode];
+  const cfg      = modeConfigs[mode] || modeConfigs.calm;
 
   /* ── First-visit preference popup ────────────────── */
   useEffect(() => {
     const prefs = loadPreferences();
     if (!prefs) {
       setShowPrefs(true);
-    } else if (prefs.feeling && prefs.feeling !== mode) {
-      setMode(prefs.feeling);
-      setHasSelectedMode(true);
+    } else {
+      // pace='all' → calm (show everything); otherwise use chosen feeling
+      const target = prefs.pace === 'all' ? 'calm' : (prefs.feeling || 'calm');
+      if (target !== mode) {
+        setMode(target);
+        setHasSelectedMode(true);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -65,17 +69,15 @@ export default function DemoWorkspace({ onExit }) {
     isDragging.current  = true;
     dragStartX.current  = e.clientX;
     dragStartW.current  = panelWidth;
-    document.body.style.cursor    = 'col-resize';
+    document.body.style.cursor     = 'col-resize';
     document.body.style.userSelect = 'none';
   }, [panelWidth]);
 
   useEffect(() => {
     const onMove = (e) => {
       if (!isDragging.current) return;
-      // Panel is on the right, so dragging left = bigger panel
       const delta = dragStartX.current - e.clientX;
-      const next  = Math.min(PANEL_MAX, Math.max(PANEL_MIN, dragStartW.current + delta));
-      setPanelWidth(next);
+      setPanelWidth(Math.min(PANEL_MAX, Math.max(PANEL_MIN, dragStartW.current + delta)));
     };
     const onUp = () => {
       if (!isDragging.current) return;
@@ -93,10 +95,7 @@ export default function DemoWorkspace({ onExit }) {
 
   const cognitiveLoad = useMemo(() => {
     const level = scenario.cognitiveLoad || 'medium';
-    return {
-      level,
-      label: level === 'high' ? 'High Load' : level === 'medium' ? 'Medium Load' : 'Low Load',
-    };
+    return { level, label: level === 'high' ? 'High Load' : level === 'medium' ? 'Medium Load' : 'Low Load' };
   }, [scenario]);
 
   const { speak, stop, isSpeaking, isSupported, voices, activeVoice, setActiveVoice } = useSpeech();
@@ -113,11 +112,12 @@ export default function DemoWorkspace({ onExit }) {
     setShowSummary(false);
   };
 
-  /* ── Mode change with transition overlay ─────────── */
+  /* ── Mode change ──────────────────────────────────── */
   const handleModeChange = useCallback((newMode) => {
     if (newMode === mode || isTransitioning) return;
     stop();
     setShowSimplify(false);
+    setShowCompare(false);
     setIsTransitioning(true);
     setTimeout(() => { setMode(newMode); setHasSelectedMode(true); }, 350);
     setTimeout(() => setIsTransitioning(false), 900);
@@ -126,7 +126,10 @@ export default function DemoWorkspace({ onExit }) {
   /* ── Preference popup complete ────────────────────── */
   const handlePrefsComplete = (prefs) => {
     setShowPrefs(false);
-    if (prefs.feeling) { setMode(prefs.feeling); setHasSelectedMode(true); }
+    // pace='all' overrides feeling to show everything (calm mode)
+    const target = prefs.pace === 'all' ? 'calm' : (prefs.feeling || 'calm');
+    setMode(target);
+    setHasSelectedMode(true);
   };
 
   /* ── Read aloud ───────────────────────────────────── */
@@ -139,9 +142,7 @@ export default function DemoWorkspace({ onExit }) {
   /* ── Save / Reset ─────────────────────────────────── */
   const handleSave = () => {
     try {
-      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify({
-        scenarioId, mode, step, savedAt: Date.now(),
-      }));
+      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify({ scenarioId, mode, step, savedAt: Date.now() }));
     } catch {}
     setSavedBanner(true);
     setTimeout(() => setSavedBanner(false), 2200);
@@ -167,10 +168,11 @@ export default function DemoWorkspace({ onExit }) {
   /* ── Complete task ────────────────────────────────── */
   const handleComplete = () => setShowSummary(true);
 
-  /* ── Current mode view ────────────────────────────── */
+  /* ── Render mode content ──────────────────────────── */
   const renderContent = () => {
     const props = { step, onStepChange: setStep, taskSteps: scenario.taskSteps };
     switch (mode) {
+      case 'original':    return <OriginalContent scenario={scenario} step={step} onStepChange={setStep} />;
       case 'overwhelmed': return <OverwhelmedView {...props} />;
       case 'foggy':       return <FoggyView {...props} sections={scenario.foggyViewSections} />;
       case 'anxious':     return <AnxiousView {...props} calmSections={scenario.anxiousViewSections} onModeChange={handleModeChange} />;
@@ -179,39 +181,34 @@ export default function DemoWorkspace({ onExit }) {
     }
   };
 
+  const oneLiner = cfg.oneLiner;
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
 
-      {/* Preference popup */}
       {showPrefs && <PreferencePopup onComplete={handlePrefsComplete} />}
-
-      {/* Word definition popup */}
       <WordDefinitionPopup containerRef={contentRef} />
 
       {/* ── Top bar ────────────────────────────────────── */}
       <div className="flex-shrink-0 bg-white border-b border-slate-100">
         <div className="flex items-center justify-between px-5 py-2.5">
           <div className="flex items-center gap-3">
-            <button onClick={onExit} className="text-xs text-slate-400 hover:text-slate-700 transition-colors btn-micro">
-              ← Back
-            </button>
+            <button onClick={onExit} className="text-xs text-slate-400 hover:text-slate-700 transition-colors btn-micro">← Back</button>
             <div className="w-px h-4 bg-slate-200" />
             <button onClick={onExit} className="flex items-center gap-2 hover:opacity-75 transition-opacity btn-micro">
-              <div className="w-6 h-6 bg-violet-500 rounded-lg flex items-center justify-center text-sm">🌿</div>
+              <div className="w-6 h-6 bg-slate-700 rounded-lg flex items-center justify-center text-sm">🌿</div>
               <p className="text-sm font-semibold text-slate-700">ClearPath</p>
             </button>
             <span className="text-[10px] text-slate-300 font-mono">Demo</span>
           </div>
 
-          {savedBanner && <p className="text-xs text-green-600 font-semibold fade-in">✓ Progress saved</p>}
+          {savedBanner && <p className="text-xs text-green-600 font-semibold fade-in">✓ Saved</p>}
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowFocusTimer(v => !v)}
+            <button onClick={() => setShowFocusTimer(v => !v)}
               className={`text-xs px-2.5 py-1 rounded-lg border transition-colors btn-micro ${
                 showFocusTimer ? 'bg-slate-800 text-white border-slate-800' : 'border-slate-200 text-slate-500 hover:border-slate-300'
-              }`}
-            >
+              }`}>
               ⏱ {showFocusTimer ? 'Hide' : 'Timer'}
             </button>
             {step >= stepCount && (
@@ -229,11 +226,11 @@ export default function DemoWorkspace({ onExit }) {
         </div>
       </div>
 
-      {/* ── Status bar ─────────────────────────────────── */}
+      {/* ── Status + reading level row ─────────────────── */}
       <div className="flex-shrink-0">
         <StatusCard mode={mode} step={step} totalSteps={stepCount} hasSelectedMode={hasSelectedMode} />
         <div className="flex items-center justify-between px-5 py-1.5 bg-white border-b border-slate-100">
-          <CognitiveLoadMeter load={cognitiveLoad} reduced={hasSelectedMode} />
+          <CognitiveLoadMeter load={cognitiveLoad} reduced={hasSelectedMode && mode !== 'original'} />
           {showFocusTimer && (
             <div className="flex items-center gap-1.5 text-xs text-slate-400">
               <span>⏱</span>
@@ -247,12 +244,12 @@ export default function DemoWorkspace({ onExit }) {
       {/* ── Main area ──────────────────────────────────── */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {/* Content area */}
+        {/* Content */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
           {showCompare && (
             <div className="flex-shrink-0 bg-slate-800 text-white text-xs px-4 py-2 flex items-center justify-between">
-              <span className="font-semibold">Compare — Original vs {cfg.name} Mode</span>
-              <button onClick={() => setShowCompare(false)} className="text-slate-400 hover:text-white">✕</button>
+              <span className="font-semibold">Comparing: Original vs {cfg.name} Mode</span>
+              <button onClick={() => setShowCompare(false)} className="text-slate-400 hover:text-white">✕ Close</button>
             </div>
           )}
 
@@ -264,10 +261,11 @@ export default function DemoWorkspace({ onExit }) {
             <TransitionOverlay mode={mode} visible={isTransitioning} modeMessages={scenario.modeMessages} />
 
             {showCompare ? (
+              /* Side-by-side compare */
               <div className="flex h-full min-h-[500px] gap-px bg-slate-200">
                 <div className="flex-1 bg-white overflow-y-auto">
                   <div className="p-3 bg-slate-50 border-b border-slate-200">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Original — before ClearPath</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">📄 Original — before ClearPath</p>
                   </div>
                   <div style={{ zoom: 0.72 }}>
                     <OriginalContent scenario={scenario} step={step} onStepChange={setStep} />
@@ -286,9 +284,42 @@ export default function DemoWorkspace({ onExit }) {
               </div>
             ) : (
               <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+
+                {/* Mode one-liner banner */}
+                {hasSelectedMode && oneLiner && (
+                  <div className="mx-5 mt-4 px-4 py-2.5 rounded-2xl" style={{ background: cfg.hex.accentLight }}>
+                    <p className="text-xs font-medium" style={{ color: cfg.hex.text }}>
+                      {cfg.icon} {oneLiner}
+                    </p>
+                  </div>
+                )}
+
+                {/* Prominent compare button — only shown in non-original modes after selection */}
+                {hasSelectedMode && mode !== 'original' && (
+                  <div className="mx-5 mt-3">
+                    <button
+                      onClick={() => { setShowCompare(true); setShowSimplify(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 border-dashed text-sm transition-all btn-micro hover:shadow-md"
+                      style={{
+                        borderColor: cfg.hex.accent + '50',
+                        color: cfg.hex.accent,
+                        background: cfg.hex.accentLight,
+                      }}
+                    >
+                      <span className="text-xl">⇔</span>
+                      <div className="text-left flex-1">
+                        <span className="font-semibold text-sm">See before &amp; after ClearPath</span>
+                        <span className="block text-[11px] opacity-70 mt-0.5">Compare the original with your current view</span>
+                      </div>
+                      <span className="text-xs opacity-50 flex-shrink-0">Tap →</span>
+                    </button>
+                  </div>
+                )}
+
                 {renderContent()}
+
                 {showSimplify && (
-                  <div className="px-6 pb-6 slide-in-up">
+                  <div className="px-5 pb-6 slide-in-up">
                     <SimplifyOutput
                       simplifyOutput={scenario.simplifyOutput}
                       onClose={() => setShowSimplify(false)}
@@ -305,11 +336,12 @@ export default function DemoWorkspace({ onExit }) {
         {/* Drag handle */}
         <div
           onMouseDown={handleDragStart}
-          className="w-1 flex-shrink-0 bg-slate-100 hover:bg-violet-300 cursor-col-resize transition-colors duration-150 active:bg-violet-400"
-          title="Drag to resize panel"
+          className="w-1 flex-shrink-0 cursor-col-resize transition-colors duration-150"
+          style={{ background: cfg.hex.accent + '25' }}
+          title="Drag to resize"
         />
 
-        {/* Right panel — width controlled by drag */}
+        {/* Right panel */}
         <div className="flex-shrink-0 h-full overflow-hidden" style={{ width: panelWidth }}>
           <ControlPanel
             mode={mode}
@@ -336,7 +368,6 @@ export default function DemoWorkspace({ onExit }) {
         </div>
       </div>
 
-      {/* Session summary modal */}
       <SessionSummary
         visible={showSummary}
         scenario={scenario}
@@ -350,7 +381,6 @@ export default function DemoWorkspace({ onExit }) {
   );
 }
 
-/* Inline focus timer */
 function FocusTimerInline({ startTime }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {

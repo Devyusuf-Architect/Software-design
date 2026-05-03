@@ -216,6 +216,26 @@ html { scroll-behavior: smooth; }
 }
 .fade-in { animation: fadeIn 0.3s ease forwards; }
 
+/* Soft card depth — applied to mode-view cards */
+.card-depth {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+}
+.card-depth-md {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07), 0 8px 20px rgba(0,0,0,0.05);
+}
+.card-depth-lg {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 16px 40px rgba(0,0,0,0.06);
+}
+
+/* Mode card pop animation */
+@keyframes modeCardEnter {
+  from { opacity: 0; transform: scale(0.97) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.mode-card-enter {
+  animation: modeCardEnter 0.25s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+
 /* Mode card active highlight */
 @keyframes modeCardIn {
   from { opacity: 0; transform: scale(0.97); }
