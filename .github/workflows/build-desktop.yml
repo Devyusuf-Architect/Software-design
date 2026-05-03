@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_draft:
-        description: 'Create a draft release'
+        description: 'Create a draft release (tag pushes only)'
         required: false
         default: 'true'
         type: boolean
@@ -69,12 +69,15 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libxdo-dev
+            libxdo-dev \
+            libssl-dev
 
       - name: Install Node dependencies
         run: npm install
 
-      - name: Build Tauri app
+      # Tag push: build + create GitHub release
+      - name: Build Tauri app (release)
+        if: startsWith(github.ref, 'refs/tags/')
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,11 +98,20 @@ jobs:
             - **macOS**: Open the `.dmg`, drag ClearPath to Applications
             - **Windows**: Run the `.msi` installer
             - **Linux**: Run the `.AppImage` directly, or install the `.deb`
-          releaseDraft: ${{ github.event.inputs.release_draft == 'true' || github.event_name == 'workflow_dispatch' }}
+          releaseDraft: ${{ github.event.inputs.release_draft != 'false' }}
           prerelease: false
           args: ${{ matrix.args }}
 
-      # Upload artifacts so they're available even without a release tag
+      # workflow_dispatch or non-tag push: build only, no release
+      - name: Build Tauri app (no release)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+
+      # Upload artifacts — available for 7 days regardless of trigger
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
