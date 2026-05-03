@@ -95,6 +95,14 @@ function Navbar({ onSignIn, onGetStarted, onTryDemo }) {
           <a href="#how-it-works" className="hover:text-slate-800 transition-colors">How it works</a>
           <a href="#modes"        className="hover:text-slate-800 transition-colors">Modes</a>
           <a href="#features"     className="hover:text-slate-800 transition-colors">Features</a>
+          <a
+            href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 text-slate-700 hover:text-slate-900 font-semibold transition-colors"
+          >
+            ⬇ Download
+          </a>
         </div>
 
         {/* Auth */}
@@ -163,20 +171,36 @@ export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
               every task easier to act on.
             </p>
 
-            <div className="hero-in-3 flex flex-wrap gap-3 mb-8">
-              <button
-                onClick={onTryDemo}
-                className="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 shadow-xl shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5 text-sm"
-              >
-                Try Demo — see it live
-                <span className="text-violet-200">→</span>
-              </button>
-              <button
-                onClick={onGetStarted}
-                className="inline-flex items-center gap-2 border-2 border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 hover:bg-slate-50 text-sm"
-              >
-                Get started free
-              </button>
+            <div className="hero-in-3 mb-8">
+              <div className="flex flex-wrap gap-3 mb-4">
+                <button
+                  onClick={onTryDemo}
+                  className="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 shadow-xl shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5 text-sm"
+                >
+                  Try Demo — see it live
+                  <span className="text-violet-200">→</span>
+                </button>
+                <button
+                  onClick={onGetStarted}
+                  className="inline-flex items-center gap-2 border-2 border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 hover:bg-slate-50 text-sm"
+                >
+                  Get started free
+                </button>
+              </div>
+              <div>
+                <a
+                  href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-sm"
+                >
+                  <span>⬇</span>
+                  Download for Windows
+                </a>
+                <p className="text-xs text-slate-400 mt-2 ml-1">
+                  Windows desktop version. Web version also available.
+                </p>
+              </div>
             </div>
 
             <div className="hero-in-4 flex items-center gap-3 text-sm text-slate-400">
