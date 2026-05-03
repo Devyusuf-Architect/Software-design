@@ -1,0 +1,10 @@
+{
+  "$schema": "https://schema.tauri.app/schema/1",
+  "identifier": "default",
+  "description": "Default capabilities for ClearPath",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default"
+  ]
+}
