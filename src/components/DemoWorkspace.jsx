@@ -18,6 +18,7 @@ import StressedView        from './demo/StressedView';
 import CalmView            from './demo/CalmView';
 import WordDefinitionPopup from './demo/WordDefinitionPopup';
 import PreferencePopup, { loadPreferences } from './demo/PreferencePopup';
+import OverlayPanel        from './overlay/OverlayPanel';
 
 const DEMO_SESSION_KEY = 'clearpath_demo_session';
 const PANEL_MIN        = 180;
@@ -42,6 +43,10 @@ export default function DemoWorkspace({ onExit }) {
   const [panelWidth,       setPanelWidth]       = useState(PANEL_DEFAULT);
   const [panelStyle,       setPanelStyle]       = useState('simple');
   const [startTime]                             = useState(Date.now());
+
+  // Overlay vs Workspace mode toggle
+  const [workspaceView,    setWorkspaceView]    = useState('workspace'); // 'workspace' | 'overlay'
+  const [showOverlay,      setShowOverlay]      = useState(true);
 
   const contentRef = useRef(null);
   const isDragging = useRef(false);
@@ -219,6 +224,30 @@ export default function DemoWorkspace({ onExit }) {
           {savedBanner && <p className="text-xs text-green-600 font-semibold fade-in">✓ Saved</p>}
 
           <div className="flex items-center gap-2">
+            {/* Overlay / Workspace toggle */}
+            {!isMobile && (
+              <div className="flex items-center bg-slate-100 rounded-xl p-0.5 gap-0.5">
+                <button
+                  onClick={() => setWorkspaceView('workspace')}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all"
+                  style={workspaceView === 'workspace'
+                    ? { background: '#fff', color: '#334155', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
+                    : { color: '#94a3b8' }}
+                >
+                  📋 Workspace
+                </button>
+                <button
+                  onClick={() => { setWorkspaceView('overlay'); setShowOverlay(true); }}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all"
+                  style={workspaceView === 'overlay'
+                    ? { background: cfg.hex.accent, color: '#fff', boxShadow: `0 1px 4px ${cfg.hex.accent}50` }
+                    : { color: '#94a3b8' }}
+                >
+                  🪟 Overlay
+                </button>
+              </div>
+            )}
+
             {/* Mobile: mode indicator + panel toggle */}
             {isMobile ? (
               <button
@@ -232,13 +261,13 @@ export default function DemoWorkspace({ onExit }) {
               </button>
             ) : (
               <>
-                {!showFocusTimer && (
+                {workspaceView === 'workspace' && !showFocusTimer && (
                   <button onClick={() => setShowFocusTimer(true)}
                     className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 btn-micro">
                     ⏱ Timer
                   </button>
                 )}
-                {step >= stepCount && (
+                {workspaceView === 'workspace' && step >= stepCount && (
                   <button onClick={handleComplete}
                     className="text-xs px-2.5 py-1 rounded-lg bg-green-500 text-white font-semibold btn-micro shadow-sm">
                     ✓ Complete
@@ -256,23 +285,62 @@ export default function DemoWorkspace({ onExit }) {
         </div>
       </div>
 
-      {/* ── Status + reading level ─────────────────────── */}
-      <div className="flex-shrink-0">
-        <StatusCard mode={mode} step={step} totalSteps={stepCount} hasSelectedMode={hasSelectedMode} />
-        <div className="flex items-center justify-between px-4 py-1.5 bg-white border-b border-slate-100">
-          <CognitiveLoadMeter load={cognitiveLoad} reduced={hasSelectedMode && mode !== 'original'} />
-          {showFocusTimer && !isMobile && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-              <span>⏱</span>
-              <FocusTimerInline startTime={startTime} />
-              <button onClick={() => setShowFocusTimer(false)} className="text-slate-300 hover:text-slate-500 ml-1">✕</button>
+      {/* ── Status + reading level (workspace mode only) ── */}
+      {workspaceView === 'workspace' && (
+        <div className="flex-shrink-0">
+          <StatusCard mode={mode} step={step} totalSteps={stepCount} hasSelectedMode={hasSelectedMode} />
+          <div className="flex items-center justify-between px-4 py-1.5 bg-white border-b border-slate-100">
+            <CognitiveLoadMeter load={cognitiveLoad} reduced={hasSelectedMode && mode !== 'original'} />
+            {showFocusTimer && !isMobile && (
+              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span>⏱</span>
+                <FocusTimerInline startTime={startTime} />
+                <button onClick={() => setShowFocusTimer(false)} className="text-slate-300 hover:text-slate-500 ml-1">✕</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Overlay Mode ───────────────────────────────── */}
+      {workspaceView === 'overlay' && (
+        <div className="flex flex-1 min-h-0 overflow-hidden relative">
+          {/* Background: dimmed original content simulating "another app" */}
+          <div className="flex-1 overflow-y-auto relative" style={{ filter: 'brightness(0.92)', pointerEvents: 'none', userSelect: 'none' }}>
+            <div className="absolute inset-0 bg-white/40 z-10" />
+            <OriginalContent scenario={scenario} step={0} onStepChange={() => {}} />
+          </div>
+          {/* Overlay label */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
+            <div className="flex items-center gap-2 bg-slate-800/80 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+              ClearPath Overlay is active — paste any text into the panel
             </div>
+          </div>
+          {/* Floating overlay panel */}
+          {showOverlay && (
+            <OverlayPanel
+              defaultMode={mode}
+              onModeChange={handleModeChange}
+              onClose={() => setShowOverlay(false)}
+              initialPos={{ x: Math.max(8, window.innerWidth - 340), y: 110 }}
+            />
+          )}
+          {/* Re-open button if closed */}
+          {!showOverlay && (
+            <button
+              onClick={() => setShowOverlay(true)}
+              className="absolute bottom-6 right-6 z-20 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-white text-sm font-semibold shadow-xl transition-all hover:-translate-y-0.5"
+              style={{ background: cfg.hex.accent }}
+            >
+              {cfg.icon} Open ClearPath panel
+            </button>
           )}
         </div>
-      </div>
+      )}
 
-      {/* ── Main area ──────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      {/* ── Main area (workspace) ───────────────────────── */}
+      {workspaceView === 'workspace' && <div className="flex flex-1 min-h-0 overflow-hidden">
 
         {/* Content */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
@@ -370,7 +438,8 @@ export default function DemoWorkspace({ onExit }) {
             </div>
           </>
         )}
-      </div>
+      </div>}
+      {/* end workspace view */}
 
       {/* ── Mobile: floating bottom tab bar ──────────── */}
       {isMobile && (
