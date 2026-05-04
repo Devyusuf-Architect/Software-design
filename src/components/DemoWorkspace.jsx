@@ -172,7 +172,7 @@ export default function DemoWorkspace({ onExit }) {
       case 'original':    return <OriginalContent scenario={scenario} step={step} onStepChange={setStep} />;
       case 'overwhelmed': return <OverwhelmedView {...props} />;
       case 'foggy':       return <FoggyView {...props} sections={scenario.foggyViewSections} />;
-      case 'anxious':     return <AnxiousView {...props} calmSections={scenario.anxiousViewSections} onModeChange={handleModeChange} />;
+      case 'anxious':     return <AnxiousView {...props} calmSections={scenario.anxiousViewSections} onModeChange={handleModeChange} scenario={scenario} />;
       case 'stressed':    return <StressedView {...props} encouragements={scenario.stressedEncouragements} />;
       default:            return <CalmView {...props} scenario={scenario} />;
     }

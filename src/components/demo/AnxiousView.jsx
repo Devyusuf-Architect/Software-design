@@ -1,36 +1,17 @@
-import { NOTICE, TASK_STEPS } from '../../data/demoContent';
-
 const DEFAULT_CALM_SECTIONS = [
-  {
-    id: 'intro',
-    label: 'What this notice is about',
-    content: `This is a payment reminder for your account (${NOTICE.accountNumber}). There is a balance of ${NOTICE.totalDue} that needs your attention. You can review this at your own pace before deciding what to do.`,
-  },
-  {
-    id: 'amount',
-    label: 'The amount involved',
-    content: `The total amount is ${NOTICE.totalDue}. This includes your original balance of ${NOTICE.original} and some additional charges. No action is required right now — this is for your information.`,
-  },
-  {
-    id: 'timing',
-    label: 'The timing',
-    content: `There is a due date of ${NOTICE.dueDate}. You still have time to review your options carefully. Nothing needs to happen immediately while you are reading this.`,
-  },
-  {
-    id: 'options',
-    label: 'Your options — no rush to decide',
-    content: `You can choose to pay the full amount (${NOTICE.totalDue}), or you may be able to arrange a payment plan at ${NOTICE.planMonthly} per month. Both are valid choices. There is no pressure to decide right now.`,
-  },
-  {
-    id: 'next',
-    label: 'When you are ready to proceed',
-    content: `When you feel ready, you can fill in your payment details and submit. You can also save your progress and return later. Nothing will be submitted without your deliberate action.`,
-  },
+  { id: 'intro',   label: 'What this is about',        content: 'You can review this at your own pace before deciding what to do. Nothing happens until you are ready.' },
+  { id: 'detail',  label: 'The key information',       content: 'The important details are shown here. No action is required right now — this is for your information.' },
+  { id: 'timing',  label: 'The timing',                content: 'You still have time to review your options carefully. Nothing needs to happen immediately while you are reading this.' },
+  { id: 'options', label: 'Your options — no rush',    content: 'There are options available to you. Both are valid choices. There is no pressure to decide right now.' },
+  { id: 'next',    label: 'When you are ready',        content: 'When you feel ready, you can take the next step. You can also save your progress and return later. Nothing will be submitted without your deliberate action.' },
 ];
 
-export default function AnxiousView({ step, onStepChange, onModeChange, calmSections, taskSteps }) {
+export default function AnxiousView({ step, onStepChange, onModeChange, calmSections, taskSteps, scenario }) {
   const CALM_SECTIONS  = calmSections || DEFAULT_CALM_SECTIONS;
-  const taskStepsFinal = taskSteps    || TASK_STEPS;
+  const taskStepsFinal = taskSteps || [];
+  const label          = scenario?.label || 'Content';
+  const description    = scenario?.description || 'a document that needs your attention';
+
   return (
     <div className="max-w-2xl mx-auto px-6 py-6">
 
@@ -39,7 +20,7 @@ export default function AnxiousView({ step, onStepChange, onModeChange, calmSect
         <div>
           <p className="text-teal-800 font-semibold text-sm">You are safe here</p>
           <p className="text-teal-600 text-xs mt-0.5">
-            You can review this without submitting anything. Nothing happens until you decide.
+            You can read through this without doing anything. Nothing happens until you decide.
           </p>
         </div>
         <button
@@ -55,10 +36,10 @@ export default function AnxiousView({ step, onStepChange, onModeChange, calmSect
         <p className="text-xs font-bold text-teal-500 uppercase tracking-widest mb-2">What to expect on this page</p>
         <ul className="space-y-1.5">
           {[
-            `A payment reminder for ${NOTICE.totalDue}`,
-            `Due date: ${NOTICE.dueDate} — you still have time`,
-            `${CALM_SECTIONS.length} short sections — no pop-ups or sudden changes`,
-            'Nothing is submitted until you choose to submit',
+            `${label} — ${description}`,
+            `${CALM_SECTIONS.length} short sections, shown one at a time`,
+            'No pop-ups, no sudden changes, no time pressure',
+            'Nothing happens until you choose to act',
           ].map((item, i) => (
             <li key={i} className="flex items-center gap-2 text-teal-700 text-sm">
               <span className="w-4 h-4 bg-teal-200 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] text-teal-600 font-bold">✓</span>
@@ -68,10 +49,10 @@ export default function AnxiousView({ step, onStepChange, onModeChange, calmSect
         </ul>
       </div>
 
-      {/* Calm heading */}
+      {/* Heading */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-teal-900 mb-1">
-          Payment reminder — here is what needs your attention
+          {label} — here is what needs your attention
         </h2>
         <p className="text-teal-600 text-sm">
           Take as long as you need. Each section is short.
@@ -116,7 +97,7 @@ export default function AnxiousView({ step, onStepChange, onModeChange, calmSect
         >
           ← Back
         </button>
-        {step < taskStepsFinal.length - 1 ? (
+        {step < CALM_SECTIONS.length - 1 ? (
           <button
             onClick={() => onStepChange(step + 1)}
             className="px-5 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-teal-200 transition-all"
@@ -128,7 +109,7 @@ export default function AnxiousView({ step, onStepChange, onModeChange, calmSect
         )}
       </div>
 
-      {step === taskStepsFinal.length - 1 && (
+      {step === CALM_SECTIONS.length - 1 && (
         <div className="mt-5 p-4 bg-teal-100 border border-teal-200 rounded-2xl text-center">
           <p className="text-teal-800 font-semibold text-sm">You have reviewed everything. Well done.</p>
           <p className="text-teal-600 text-xs mt-1">Nothing has been submitted. You are still in control.</p>
