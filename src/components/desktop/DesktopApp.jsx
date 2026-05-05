@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { modeConfigs } from '../../utils/modeConfigs';
-import { lookupWord }  from '../../data/wordDictionary';
-import { useSpeech }   from '../../hooks/useSpeech';
-import { isTauri }     from '../../utils/isTauri';
-import DemoWorkspace   from '../DemoWorkspace';
+import { modeConfigs }   from '../../utils/modeConfigs';
+import { lookupWord }    from '../../data/wordDictionary';
+import { useSpeech }     from '../../hooks/useSpeech';
+import { isTauri }       from '../../utils/isTauri';
+import DemoWorkspace     from '../DemoWorkspace';
+import ClearPathLogo     from '../ClearPathLogo';
 
 /* ── Tauri window helper ──────────────────────────────────────────────── */
 async function tauriWindow() {
@@ -339,7 +340,9 @@ export default function DesktopApp() {
             ← Overlay
           </button>
           <div className="flex items-center gap-2 pointer-events-none">
-            <span className="text-white/50 text-sm">🌿</span>
+            <div className="w-5 h-5 text-slate-400">
+              <ClearPathLogo size={20} />
+            </div>
             <span className="text-white font-semibold text-sm">ClearPath Workspace</span>
           </div>
           <div className="flex items-center gap-1">
@@ -368,7 +371,9 @@ export default function DesktopApp() {
       >
         {/* Left: logo + session badge */}
         <div className="flex items-center gap-2 pointer-events-none">
-          <span className="text-sm">{cfg.icon}</span>
+          <div className="w-4 h-4 text-violet-400">
+            <ClearPathLogo size={16} />
+          </div>
           <span className="font-bold text-white text-sm">ClearPath</span>
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
             style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)' }}>
@@ -408,7 +413,9 @@ export default function DesktopApp() {
           style={{ background: '#0F172A', userSelect: 'none' }}
         >
           <div className="flex items-center gap-2 pointer-events-none">
-            <span className="text-lg">🌿</span>
+            <div className="w-5 h-5 text-violet-400">
+              <ClearPathLogo size={20} />
+            </div>
             <span className="font-bold text-sm text-white">ClearPath</span>
             <span className="text-slate-600 text-[10px] font-mono">by ODAI</span>
           </div>
@@ -422,9 +429,8 @@ export default function DesktopApp() {
 
         {/* Hero content */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
-          <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-4xl shadow-2xl"
-            style={{ background: 'linear-gradient(135deg, #1a3a1a, #2d5a2d)' }}>
-            🌿
+          <div className="w-16 h-16 text-violet-400">
+            <ClearPathLogo size={64} />
           </div>
 
           <div>
@@ -516,7 +522,9 @@ export default function DesktopApp() {
       >
         {/* Logo + session badge */}
         <div className="flex items-center gap-2 pointer-events-none">
-          <span className="text-base leading-none">{cfg.icon}</span>
+          <div className="w-5 h-5 text-violet-400">
+            <ClearPathLogo size={20} />
+          </div>
           <span className="font-bold text-sm text-white">ClearPath</span>
           <div
             className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import ClearPathLogo from './ClearPathLogo';
 
 const DOWNLOAD_URL =
   'https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe';
@@ -172,8 +173,8 @@ function Navbar() {
     <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'nav-scrolled' : 'bg-transparent'}`}>
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <a href="#" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center text-lg shadow-md shadow-violet-200">
-            🌿
+          <div className="w-8 h-8 text-violet-500">
+            <ClearPathLogo size={32} />
           </div>
           <span className="font-bold text-slate-800 text-base">ClearPath</span>
           <span className="hidden sm:inline text-[10px] font-mono font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full ml-1">
@@ -576,7 +577,9 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row items-start justify-between gap-8 pb-8 border-b border-slate-800">
             <div className="max-w-xs">
               <div className="flex items-center gap-2.5 mb-3">
-                <div className="w-7 h-7 bg-violet-500 rounded-lg flex items-center justify-center text-base">🌿</div>
+                <div className="w-7 h-7 text-violet-400">
+                  <ClearPathLogo size={28} />
+                </div>
                 <span className="font-bold text-white">ClearPath</span>
                 <span className="text-[10px] font-mono text-slate-500 ml-1">by ODAI</span>
               </div>
