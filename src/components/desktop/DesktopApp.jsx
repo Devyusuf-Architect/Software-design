@@ -1,11 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { modeConfigs } from '../../utils/modeConfigs';
-import { lookupWord } from '../../data/wordDictionary';
-import { useSpeech } from '../../hooks/useSpeech';
-import { isTauri } from '../../utils/isTauri';
-import DemoWorkspace from '../DemoWorkspace';
+import { lookupWord }  from '../../data/wordDictionary';
+import { useSpeech }   from '../../hooks/useSpeech';
+import { isTauri }     from '../../utils/isTauri';
+import DemoWorkspace   from '../DemoWorkspace';
 
-/* ── Tauri window helpers ─────────────────────────────────────────────── */
+/* ── Tauri window helper ──────────────────────────────────────────────── */
 async function tauriWindow() {
   if (!isTauri) return null;
   try {
@@ -14,10 +14,31 @@ async function tauriWindow() {
   } catch { return null; }
 }
 
-const OVERLAY_W = 400, OVERLAY_H = 640;
-const WORKSPACE_W = 1280, WORKSPACE_H = 840;
+async function resizeTo(w, h) {
+  const win = await tauriWindow();
+  if (!win) return;
+  const { LogicalSize } = await import('@tauri-apps/api/window');
+  await win.setSize(new LogicalSize(w, h));
+}
 
-/* ── Text processing (rule-based simulation) ──────────────────────────── */
+const W_OVERLAY   = 400;
+const H_OVERLAY   = 640;
+const H_COLLAPSED = 56;
+const W_WORKSPACE = 1280;
+const H_WORKSPACE = 840;
+
+/* ── Modes (all six) ─────────────────────────────────────────────────── */
+const ALL_MODES = ['calm', 'overwhelmed', 'foggy', 'anxious', 'stressed', 'original'];
+
+/* ── Action definitions ──────────────────────────────────────────────── */
+const ACTIONS = [
+  { id: 'simplify',   icon: '✨', label: 'Simplify'   },
+  { id: 'explain',    icon: '💡', label: 'Explain'    },
+  { id: 'steps',      icon: '📋', label: 'Step Guide' },
+  { id: 'define',     icon: '📖', label: 'Define'     },
+];
+
+/* ── Text processing (rule-based) ────────────────────────────────────── */
 const SAMPLE_TEXT =
   'Your outstanding balance of $128.45 is due by May 5, 2026. ' +
   'You may pay in full or arrange a payment plan at $47 per month for three months. ' +
@@ -66,115 +87,246 @@ function processText(text, action) {
   }
 }
 
-const MODES = ['calm', 'overwhelmed', 'foggy', 'anxious', 'stressed'];
-const ACTIONS = [
-  { id: 'simplify', icon: '✨', label: 'Simplify' },
-  { id: 'explain',  icon: '💡', label: 'Explain'  },
-  { id: 'steps',    icon: '📋', label: 'Steps'    },
-  { id: 'define',   icon: '📖', label: 'Define'   },
-];
+/* ════════════════════════════════════════════════════════════════════════
+   ANALYZE SCREEN DIALOG
+   ════════════════════════════════════════════════════════════════════════ */
+function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
+  const [pastedText, setPastedText] = useState('');
+  const textareaRef = useRef(null);
 
-/* ════════════════════════════════════════════════════════════════════════ */
+  useEffect(() => {
+    // Auto-read clipboard on open, silently fail if not permitted
+    (async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text?.trim()) setPastedText(text.trim());
+      } catch {}
+    })();
+    textareaRef.current?.focus();
+  }, []);
+
+  return (
+    <div
+      className="absolute inset-0 z-50 flex flex-col"
+      style={{ background: '#0B1120' }}
+    >
+      {/* Header */}
+      <div
+        className="flex-shrink-0 flex items-center gap-3 px-5 py-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <span className="text-xl">🔍</span>
+        <div>
+          <p className="font-bold text-white text-sm">Analyze Screen</p>
+          <p className="text-[11px] text-slate-500">Paste content copied from your screen</p>
+        </div>
+      </div>
+
+      {/* Instructions */}
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <ol className="space-y-1.5 text-sm text-slate-400">
+          <li className="flex items-start gap-2">
+            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
+              style={{ background: cfg.hex.accent, color: '#fff' }}>1</span>
+            <span>Select and copy text from any window on your desktop</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
+              style={{ background: cfg.hex.accent, color: '#fff' }}>2</span>
+            <span>Paste it into the box below (Ctrl + V)</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
+              style={{ background: cfg.hex.accent, color: '#fff' }}>3</span>
+            <span>Click Analyze — ClearPath will simplify it for you</span>
+          </li>
+        </ol>
+      </div>
+
+      {/* Textarea */}
+      <div className="flex-1 px-5 py-4 min-h-0">
+        <textarea
+          ref={textareaRef}
+          value={pastedText}
+          onChange={e => setPastedText(e.target.value)}
+          placeholder="Paste text from your screen here…"
+          className="w-full h-full rounded-xl px-3 py-2.5 text-sm leading-relaxed placeholder-slate-600 resize-none focus:outline-none"
+          style={{
+            background: '#1E293B',
+            color: '#E2E8F0',
+            border: `1px solid ${cfg.hex.accent}30`,
+            minHeight: 120,
+          }}
+        />
+      </div>
+
+      {/* Buttons */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-5 pb-5">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-3 rounded-xl text-sm font-semibold transition-colors"
+          style={{ background: '#1E293B', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => pastedText.trim() && onConfirm(pastedText.trim())}
+          disabled={!pastedText.trim()}
+          className="flex-1 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ background: cfg.hex.accent, color: '#fff' }}
+        >
+          Analyze →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MAIN DESKTOP APP
+   ════════════════════════════════════════════════════════════════════════ */
 export default function DesktopApp() {
-  const [view,         setView]         = useState('overlay'); // 'overlay' | 'workspace'
-  const [overlayMode,  setOverlayMode]  = useState('calm');
-  const [inputText,    setInputText]    = useState('');
-  const [output,       setOutput]       = useState(null);
-  const [processing,   setProcessing]   = useState(false);
-  const [activeAction, setActiveAction] = useState(null);
-  const [showModeMenu, setShowModeMenu] = useState(false);
-  const [alwaysOnTop,  setAlwaysOnTop]  = useState(false);
-  const [transitioning,setTransitioning]= useState(false);
+  /* ── View / session state ─────────────────────────────────────── */
+  const [appView,       setAppView]       = useState('idle');     // 'idle' | 'session' | 'workspace'
+  const [collapsed,     setCollapsed]     = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+
+  /* ── Overlay content state ────────────────────────────────────── */
+  const [overlayMode,      setOverlayMode]      = useState('calm');
+  const [inputText,        setInputText]        = useState('');
+  const [output,           setOutput]           = useState(null);
+  const [processing,       setProcessing]       = useState(false);
+  const [activeAction,     setActiveAction]     = useState(null);
+  const [showModeMenu,     setShowModeMenu]     = useState(false);
+  const [showAnalyzeDialog,setShowAnalyzeDialog]= useState(false);
+  const [alwaysOnTop,      setAlwaysOnTop]      = useState(false);
 
   const cfg = modeConfigs[overlayMode] || modeConfigs.calm;
-  const { speak, stop, isSpeaking, isSupported } = useSpeech();
-
-  /* ── Window controls ──────────────────────────────────────────── */
-  const handleMinimize = async () => {
-    const win = await tauriWindow(); win?.minimize();
-  };
-  const handleClose = async () => {
-    const win = await tauriWindow(); win?.close();
-  };
-  const handleAlwaysOnTop = async (val) => {
-    setAlwaysOnTop(val);
-    const win = await tauriWindow(); win?.setAlwaysOnTop(val);
-  };
-
-  const openWorkspace = async () => {
-    setTransitioning(true);
-    const win = await tauriWindow();
-    if (win) {
-      const { LogicalSize } = await import('@tauri-apps/api/window');
-      await win.setSize(new LogicalSize(WORKSPACE_W, WORKSPACE_H));
-      await win.center();
-    }
-    setTimeout(() => { setView('workspace'); setTransitioning(false); }, 200);
-  };
-
-  const closeWorkspace = async () => {
-    setTransitioning(true);
-    const win = await tauriWindow();
-    if (win) {
-      const { LogicalSize } = await import('@tauri-apps/api/window');
-      await win.setSize(new LogicalSize(OVERLAY_W, OVERLAY_H));
-      await win.center();
-    }
-    setTimeout(() => { setView('overlay'); setTransitioning(false); }, 200);
-  };
-
-  /* ── Actions ──────────────────────────────────────────────────── */
-  const runAction = (action) => {
-    if (!inputText.trim()) return;
-    setActiveAction(action);
-    setProcessing(true);
-    setOutput(null);
-    stop();
-    setTimeout(() => {
-      setOutput(processText(inputText, action));
-      setProcessing(false);
-    }, 500);
-  };
-
-  const handleReadAloud = () => {
-    const text = output?.summary || inputText;
-    if (!text.trim()) return;
-    if (isSpeaking) { stop(); return; }
-    if (isSupported) speak(text, undefined, overlayMode);
-  };
-
-  const handleModeSelect = (m) => {
-    setOverlayMode(m);
-    setShowModeMenu(false);
-    setOutput(null);
-  };
-
-  /* ── Close mode menu on outside click ─────────────────────────── */
+  const { speak, stop, isSpeaking, isSupported: speechSupported } = useSpeech();
   const modeMenuRef = useRef(null);
+
+  /* ── Close mode menu on outside click ────────────────────────── */
   useEffect(() => {
-    const handler = (e) => {
-      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target)) {
+    const handler = e => {
+      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target))
         setShowModeMenu(false);
-      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  /* ── Window controls ──────────────────────────────────────────── */
+  const handleMinimize = async () => { (await tauriWindow())?.minimize(); };
+  const handleClose    = async () => { (await tauriWindow())?.close(); };
+
+  const handleAlwaysOnTop = async (val) => {
+    setAlwaysOnTop(val);
+    (await tauriWindow())?.setAlwaysOnTop(val);
+  };
+
+  /* ── Session management ───────────────────────────────────────── */
+  const startSession = async () => {
+    setTransitioning(true);
+    // Auto-enable always-on-top for the duration of a session
+    const win = await tauriWindow();
+    if (win) {
+      await win.setAlwaysOnTop(true);
+      await resizeTo(W_OVERLAY, H_OVERLAY);
+    }
+    setAlwaysOnTop(true);
+    setTimeout(() => { setAppView('session'); setTransitioning(false); }, 150);
+  };
+
+  const endSession = async () => {
+    setTransitioning(true);
+    stop();
+    const win = await tauriWindow();
+    if (win) {
+      await win.setAlwaysOnTop(false);
+      await resizeTo(W_OVERLAY, H_OVERLAY);
+    }
+    setTimeout(() => {
+      setAppView('idle');
+      setCollapsed(false);
+      setAlwaysOnTop(false);
+      setOutput(null);
+      setInputText('');
+      setActiveAction(null);
+      setShowAnalyzeDialog(false);
+      setTransitioning(false);
+    }, 150);
+  };
+
+  /* ── Collapse / expand ────────────────────────────────────────── */
+  const toggleCollapse = async () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    await resizeTo(W_OVERLAY, next ? H_COLLAPSED : H_OVERLAY);
+  };
+
+  /* ── Open / close workspace ───────────────────────────────────── */
+  const openWorkspace = async () => {
+    setTransitioning(true);
+    await resizeTo(W_WORKSPACE, H_WORKSPACE);
+    const win = await tauriWindow();
+    if (win) await win.center();
+    setTimeout(() => { setAppView('workspace'); setTransitioning(false); }, 200);
+  };
+
+  const closeWorkspace = async () => {
+    setTransitioning(true);
+    await resizeTo(W_OVERLAY, H_OVERLAY);
+    const win = await tauriWindow();
+    if (win) await win.center();
+    setTimeout(() => { setAppView('session'); setTransitioning(false); }, 200);
+  };
+
+  /* ── Actions ──────────────────────────────────────────────────── */
+  const runAction = useCallback((action, textOverride) => {
+    const text = textOverride ?? inputText;
+    if (!text.trim()) return;
+    setActiveAction(action);
+    setProcessing(true);
+    setOutput(null);
+    stop();
+    setTimeout(() => {
+      setOutput(processText(text, action));
+      setProcessing(false);
+    }, 500);
+  }, [inputText, stop]);
+
+  const handleReadAloud = () => {
+    const text = output?.summary || inputText;
+    if (!text.trim()) return;
+    if (isSpeaking) { stop(); return; }
+    if (speechSupported) speak(text, undefined, overlayMode);
+  };
+
+  const handleModeSelect = m => {
+    setOverlayMode(m);
+    setShowModeMenu(false);
+    setOutput(null);
+  };
+
+  /* ── Analyze Screen ───────────────────────────────────────────── */
+  const handleAnalyzeConfirm = (text) => {
+    setInputText(text);
+    setShowAnalyzeDialog(false);
+    runAction('simplify', text);
+  };
+
   /* ── Style helpers ────────────────────────────────────────────── */
   const btnPrimary   = { background: cfg.hex.accent,      color: '#fff' };
-  const btnSecondary = { background: cfg.hex.accentLight, color: cfg.hex.text };
+  const btnSecondary = { background: '#1E293B',            color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' };
 
-  /* ══════════════════════════════════════════════════════════════ */
-  /* WORKSPACE VIEW                                                  */
-  /* ══════════════════════════════════════════════════════════════ */
-  if (view === 'workspace') {
+  const fadeStyle = { opacity: transitioning ? 0 : 1, transition: 'opacity 0.15s' };
+
+  /* ════════════════════════════════════════════════════════════════
+     WORKSPACE VIEW
+     ════════════════════════════════════════════════════════════════ */
+  if (appView === 'workspace') {
     return (
-      <div
-        className="flex flex-col"
-        style={{ height: '100vh', background: '#0F172A', opacity: transitioning ? 0 : 1, transition: 'opacity 0.2s' }}
-      >
-        {/* Custom title bar */}
+      <div className="flex flex-col" style={{ height: '100vh', background: '#0F172A', ...fadeStyle }}>
         <div
           data-tauri-drag-region
           className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
@@ -186,22 +338,17 @@ export default function DesktopApp() {
           >
             ← Overlay
           </button>
-          <div className="flex items-center gap-2">
-            <span className="text-white/50 text-[10px]">🌿</span>
+          <div className="flex items-center gap-2 pointer-events-none">
+            <span className="text-white/50 text-sm">🌿</span>
             <span className="text-white font-semibold text-sm">ClearPath Workspace</span>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={handleMinimize}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 text-xs transition-colors"
-            >━</button>
-            <button
-              onClick={handleClose}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-red-500/80 text-xs transition-colors"
-            >✕</button>
+            <button onClick={handleMinimize}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 text-xs transition-colors">━</button>
+            <button onClick={handleClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-red-500/80 text-xs transition-colors">✕</button>
           </div>
         </div>
-        {/* Workspace content */}
         <div className="flex-1 overflow-hidden">
           <DemoWorkspace initialView="workspace" onExit={closeWorkspace} />
         </div>
@@ -209,49 +356,194 @@ export default function DesktopApp() {
     );
   }
 
-  /* ══════════════════════════════════════════════════════════════ */
-  /* OVERLAY VIEW                                                    */
-  /* ══════════════════════════════════════════════════════════════ */
-  return (
-    <div
-      className="flex flex-col"
-      style={{
-        height: '100vh',
-        background: '#0F172A',
-        color: '#F1F5F9',
-        opacity: transitioning ? 0 : 1,
-        transition: 'opacity 0.2s',
-        fontFamily: 'inherit',
-      }}
-    >
-      {/* ── Title bar / drag region ─────────────────────────── */}
+  /* ════════════════════════════════════════════════════════════════
+     COLLAPSED BAR (active session only)
+     ════════════════════════════════════════════════════════════════ */
+  if (appView === 'session' && collapsed) {
+    return (
       <div
         data-tauri-drag-region
-        className="flex-shrink-0 flex items-center justify-between px-4 py-3"
-        style={{ background: '#0F172A', userSelect: 'none', cursor: 'default' }}
+        className="flex items-center justify-between px-4"
+        style={{ height: '100vh', background: '#0F172A', userSelect: 'none', ...fadeStyle }}
       >
+        {/* Left: logo + session badge */}
         <div className="flex items-center gap-2 pointer-events-none">
-          <span className="text-lg leading-none">{cfg.icon}</span>
-          <span className="font-bold text-sm text-white leading-none">ClearPath</span>
-          <span className="text-slate-600 text-[10px] font-mono leading-none">by ODAI</span>
+          <span className="text-sm">{cfg.icon}</span>
+          <span className="font-bold text-white text-sm">ClearPath</span>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+            style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)' }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[10px] font-semibold text-green-400">Session Active</span>
+          </div>
         </div>
+        {/* Right: expand + window controls */}
         <div className="flex items-center gap-1">
           <button
-            onClick={handleMinimize}
+            onClick={toggleCollapse}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-200 hover:bg-white/10 text-xs transition-colors"
-            title="Minimise"
-          >━</button>
+            title="Expand"
+          >⊡</button>
+          <button onClick={handleMinimize}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-200 hover:bg-white/10 text-xs transition-colors">━</button>
+          <button onClick={handleClose}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-red-500/80 text-xs transition-colors">✕</button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     IDLE VIEW (no session running)
+     ════════════════════════════════════════════════════════════════ */
+  if (appView === 'idle') {
+    return (
+      <div
+        className="flex flex-col"
+        style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9', ...fadeStyle }}
+      >
+        {/* Title bar */}
+        <div
+          data-tauri-drag-region
+          className="flex-shrink-0 flex items-center justify-between px-4 py-3"
+          style={{ background: '#0F172A', userSelect: 'none' }}
+        >
+          <div className="flex items-center gap-2 pointer-events-none">
+            <span className="text-lg">🌿</span>
+            <span className="font-bold text-sm text-white">ClearPath</span>
+            <span className="text-slate-600 text-[10px] font-mono">by ODAI</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={handleMinimize}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-200 hover:bg-white/10 text-xs transition-colors">━</button>
+            <button onClick={handleClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-red-500/80 text-xs transition-colors">✕</button>
+          </div>
+        </div>
+
+        {/* Hero content */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
+          <div className="w-16 h-16 rounded-3xl flex items-center justify-center text-4xl shadow-2xl"
+            style={{ background: 'linear-gradient(135deg, #1a3a1a, #2d5a2d)' }}>
+            🌿
+          </div>
+
+          <div>
+            <h1 className="text-xl font-bold text-white mb-2">ClearPath Overlay</h1>
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+              Your on-demand desktop assistant. Start a session to get help with anything on your screen.
+            </p>
+          </div>
+
+          {/* Start session button */}
           <button
-            onClick={handleClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-red-500/80 text-xs transition-colors"
-            title="Close"
-          >✕</button>
+            onClick={startSession}
+            className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base transition-all hover:-translate-y-0.5 hover:shadow-2xl"
+            style={{
+              background: 'linear-gradient(135deg, #166534, #15803d)',
+              color: '#fff',
+              boxShadow: '0 8px 32px rgba(21,128,61,0.4)',
+            }}
+          >
+            <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+            Start Overlay Session
+          </button>
+
+          {/* Divider */}
+          <div className="w-full flex items-center gap-3">
+            <div className="flex-1 h-px bg-slate-800" />
+            <span className="text-slate-600 text-xs">or</span>
+            <div className="flex-1 h-px bg-slate-800" />
+          </div>
+
+          {/* Workspace link */}
+          <button
+            onClick={openWorkspace}
+            className="flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors px-5 py-2.5 rounded-xl hover:bg-white/5 w-full justify-center"
+          >
+            <span>📋</span>
+            <span>Open Workspace Mode</span>
+            <span className="opacity-40">→</span>
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex-shrink-0 flex items-center justify-between px-4 py-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+        >
+          <button
+            onClick={() => handleAlwaysOnTop(!alwaysOnTop)}
+            className="flex items-center gap-1.5 text-[11px] transition-colors"
+            style={{ color: alwaysOnTop ? '#4ADE80' : '#475569' }}
+          >
+            <span>📌</span>
+            <span>Always on top</span>
+            <div className="w-7 h-4 rounded-full transition-colors flex items-center px-0.5 ml-1"
+              style={{ background: alwaysOnTop ? '#4ADE80' : '#1E293B' }}>
+              <div className="w-3 h-3 rounded-full bg-white transition-transform"
+                style={{ transform: alwaysOnTop ? 'translateX(12px)' : 'translateX(0)' }} />
+            </div>
+          </button>
+          <p className="text-[10px] text-slate-700">User-activated only</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     ACTIVE SESSION VIEW
+     ════════════════════════════════════════════════════════════════ */
+  return (
+    <div
+      className="flex flex-col relative"
+      style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9', ...fadeStyle }}
+    >
+
+      {/* Analyze Screen dialog — full-panel overlay */}
+      {showAnalyzeDialog && (
+        <AnalyzeDialog
+          cfg={cfg}
+          onConfirm={handleAnalyzeConfirm}
+          onCancel={() => setShowAnalyzeDialog(false)}
+        />
+      )}
+
+      {/* ── Title bar ────────────────────────────────────────── */}
+      <div
+        data-tauri-drag-region
+        className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
+        style={{ background: '#0F172A', userSelect: 'none' }}
+      >
+        {/* Logo + session badge */}
+        <div className="flex items-center gap-2 pointer-events-none">
+          <span className="text-base leading-none">{cfg.icon}</span>
+          <span className="font-bold text-sm text-white">ClearPath</span>
+          <div
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+            style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)' }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[10px] font-semibold text-green-400">Session Active</span>
+          </div>
+        </div>
+
+        {/* Window controls + collapse */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleCollapse}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-200 hover:bg-white/10 text-xs transition-colors"
+            title="Minimise panel"
+          >⊟</button>
+          <button onClick={handleMinimize}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-200 hover:bg-white/10 text-xs transition-colors">━</button>
+          <button onClick={handleClose}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-red-500/80 text-xs transition-colors">✕</button>
         </div>
       </div>
 
-      {/* ── Mode + Workspace link ───────────────────────────── */}
+      {/* ── Mode + Workspace bar ──────────────────────────── */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
+        className="flex-shrink-0 flex items-center justify-between px-4 py-2"
         style={{ background: '#1E293B', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
         {/* Mode dropdown */}
@@ -263,15 +555,15 @@ export default function DesktopApp() {
           >
             <span>{cfg.icon}</span>
             <span>{cfg.name}</span>
-            <span className="text-slate-500 text-xs">{showModeMenu ? '▴' : '▾'}</span>
+            <span className="text-slate-500 text-xs ml-0.5">{showModeMenu ? '▴' : '▾'}</span>
           </button>
 
           {showModeMenu && (
             <div
-              className="absolute top-full mt-1.5 left-0 w-52 rounded-2xl overflow-hidden z-50"
+              className="absolute top-full mt-1.5 left-0 w-56 rounded-2xl overflow-hidden z-50"
               style={{ background: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
             >
-              {MODES.map(m => {
+              {ALL_MODES.map(m => {
                 const mc = modeConfigs[m];
                 const active = m === overlayMode;
                 return (
@@ -279,11 +571,9 @@ export default function DesktopApp() {
                     key={m}
                     onClick={() => handleModeSelect(m)}
                     className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left text-sm transition-colors"
-                    style={active
-                      ? { background: mc.hex.accent + '20', color: '#fff' }
-                      : { color: '#94A3B8' }}
-                    onMouseEnter={e => !active && (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                    onMouseLeave={e => !active && (e.currentTarget.style.background = 'transparent')}
+                    style={active ? { background: mc.hex.accent + '20', color: '#fff' } : { color: '#94A3B8' }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
                   >
                     <span className="text-base leading-none">{mc.icon}</span>
                     <div className="flex-1 min-w-0">
@@ -294,15 +584,14 @@ export default function DesktopApp() {
                   </button>
                 );
               })}
-              {/* Ethics note */}
-              <div className="px-4 py-2.5 border-t border-white/5">
+              <div className="px-4 py-2 border-t border-white/5">
                 <p className="text-[10px] text-slate-600">You select your mode manually.</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Open workspace */}
+        {/* Workspace link */}
         <button
           onClick={openWorkspace}
           className="flex items-center gap-1.5 text-slate-500 hover:text-slate-200 text-xs font-medium transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
@@ -313,15 +602,35 @@ export default function DesktopApp() {
         </button>
       </div>
 
-      {/* ── Scrollable content area ─────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0"
-        style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
+      {/* ── Scrollable main area ──────────────────────────── */}
+      <div
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}
+      >
 
-        {/* Input */}
+        {/* Analyze Screen — primary action */}
+        <button
+          onClick={() => setShowAnalyzeDialog(true)}
+          className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl font-bold text-sm transition-all hover:-translate-y-0.5"
+          style={{
+            background: `linear-gradient(135deg, ${cfg.hex.accent}cc, ${cfg.hex.accent})`,
+            color: '#fff',
+            boxShadow: `0 4px 20px ${cfg.hex.accent}40`,
+          }}
+        >
+          <span className="text-lg">🔍</span>
+          Analyze Screen
+        </button>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-slate-800" />
+          <span className="text-[11px] text-slate-600">or paste text below</span>
+          <div className="flex-1 h-px bg-slate-800" />
+        </div>
+
+        {/* Text input */}
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-            Text to analyse
-          </label>
           <textarea
             value={inputText}
             onChange={e => setInputText(e.target.value)}
@@ -332,7 +641,7 @@ export default function DesktopApp() {
               color: '#E2E8F0',
               border: '1px solid rgba(255,255,255,0.08)',
               minHeight: 80,
-              maxHeight: 140,
+              maxHeight: 130,
             }}
           />
           <div className="flex items-center justify-between mt-1.5">
@@ -345,17 +654,15 @@ export default function DesktopApp() {
               <button
                 onClick={() => setInputText(SAMPLE_TEXT)}
                 className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors flex items-center gap-1"
-              >
-                ✦ Use sample text
-              </button>
+              >✦ Use sample text</button>
             )}
             {inputText && (
-              <span className="text-[10px] text-slate-700">{inputText.split(/\s+/).length} words</span>
+              <span className="text-[10px] text-slate-700">{inputText.split(/\s+/).filter(Boolean).length} words</span>
             )}
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons grid */}
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             {ACTIONS.map(({ id, icon, label }) => {
@@ -365,7 +672,7 @@ export default function DesktopApp() {
                   key={id}
                   onClick={() => runAction(id)}
                   disabled={!inputText.trim() || processing}
-                  style={isActive ? btnPrimary : { background: '#1E293B', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' }}
+                  style={isActive ? btnPrimary : btnSecondary}
                   className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   onMouseEnter={e => { if (!isActive && inputText.trim() && !processing) e.currentTarget.style.background = '#2D3F52'; }}
                   onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = '#1E293B'; }}
@@ -377,13 +684,11 @@ export default function DesktopApp() {
             })}
           </div>
 
-          {/* Read Aloud — full width */}
+          {/* Read Aloud full-width */}
           <button
             onClick={handleReadAloud}
             disabled={!inputText.trim() && !output}
-            style={isSpeaking
-              ? btnPrimary
-              : { background: '#1E293B', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={isSpeaking ? btnPrimary : btnSecondary}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-30"
           >
             <span>{isSpeaking ? '⏹' : '🔊'}</span>
@@ -391,7 +696,7 @@ export default function DesktopApp() {
           </button>
         </div>
 
-        {/* Processing */}
+        {/* Processing indicator */}
         {processing && (
           <div className="flex items-center justify-center gap-1.5 py-3">
             {[0, 1, 2].map(i => (
@@ -402,10 +707,10 @@ export default function DesktopApp() {
           </div>
         )}
 
-        {/* Output */}
+        {/* Output panel */}
         {output && !processing && (
           <div
-            className="rounded-2xl p-4 space-y-3 fade-in"
+            className="rounded-2xl p-4 space-y-3"
             style={{ background: cfg.hex.accent + '18', border: `1px solid ${cfg.hex.accent}30` }}
           >
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: cfg.hex.accent }}>
@@ -452,31 +757,36 @@ export default function DesktopApp() {
         )}
       </div>
 
-      {/* ── Footer bar ──────────────────────────────────────── */}
+      {/* ── Footer bar ────────────────────────────────────── */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-4 py-2"
-        style={{ background: '#0F172A', borderTop: '1px solid rgba(255,255,255,0.04)' }}
+        className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
+        style={{ background: '#0B1120', borderTop: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {/* Always on top toggle */}
+        {/* Always on top */}
         <button
           onClick={() => handleAlwaysOnTop(!alwaysOnTop)}
           className="flex items-center gap-1.5 text-[11px] transition-colors"
-          style={{ color: alwaysOnTop ? cfg.hex.accent : '#475569' }}
+          style={{ color: alwaysOnTop ? '#4ADE80' : '#475569' }}
         >
           <span>📌</span>
-          <span>Always on top</span>
-          <div
-            className="w-7 h-4 rounded-full transition-colors flex items-center px-0.5"
-            style={{ background: alwaysOnTop ? cfg.hex.accent : '#1E293B' }}
-          >
-            <div
-              className="w-3 h-3 rounded-full bg-white transition-transform"
-              style={{ transform: alwaysOnTop ? 'translateX(12px)' : 'translateX(0)' }}
-            />
+          <span>Pin on top</span>
+          <div className="w-7 h-4 rounded-full transition-colors flex items-center px-0.5 ml-1"
+            style={{ background: alwaysOnTop ? '#4ADE80' : '#1E293B' }}>
+            <div className="w-3 h-3 rounded-full bg-white transition-transform"
+              style={{ transform: alwaysOnTop ? 'translateX(12px)' : 'translateX(0)' }} />
           </div>
         </button>
 
-        <p className="text-[10px] text-slate-700">You stay in control</p>
+        {/* End session */}
+        <button
+          onClick={endSession}
+          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          style={{ background: 'rgba(239,68,68,0.12)', color: '#F87171', border: '1px solid rgba(239,68,68,0.2)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.22)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; }}
+        >
+          ■ End Session
+        </button>
       </div>
     </div>
   );
