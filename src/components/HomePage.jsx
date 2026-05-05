@@ -1,57 +1,89 @@
 import { useEffect, useRef, useState } from 'react';
 
+const DOWNLOAD_URL =
+  'https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe';
+
 /* ── Data ──────────────────────────────────────────────────────── */
 const MODES = [
   {
-    icon: '🌿', name: 'Calm',        tagline: 'Full access, clear mind',
-    desc: 'When you\'re feeling steady, ClearPath steps back and lets you work with everything available.',
-    color: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-700',
-    badge: 'bg-indigo-100 text-indigo-600', float: 'float-a',
-  },
-  {
     icon: '🌸', name: 'Overwhelmed', tagline: 'One idea at a time',
-    desc: 'Content is shown one section at a time. A breathing guide is built in when you need a moment.',
+    desc: 'Content appears one section at a time with a built-in breathing guide.',
     color: 'bg-violet-50', border: 'border-violet-100', text: 'text-violet-700',
-    badge: 'bg-violet-100 text-violet-600', float: 'float-b',
+    badge: 'bg-violet-100 text-violet-600',
   },
   {
-    icon: '🌥️', name: 'Foggy',       tagline: 'Bold keywords, read aloud',
-    desc: 'Key words are highlighted. Click any sentence to hear it. Simplify the text with one tap.',
+    icon: '🌥️', name: 'Foggy', tagline: 'Bold keywords, read aloud',
+    desc: 'Key words are highlighted and you can hear any sentence read aloud.',
     color: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700',
-    badge: 'bg-amber-100 text-amber-600', float: 'float-c',
+    badge: 'bg-amber-100 text-amber-600',
   },
   {
-    icon: '🌊', name: 'Anxious',     tagline: 'Calm & predictable',
-    desc: 'Urgency language is removed. You see what to expect before you read. Exit to safety anytime.',
+    icon: '🌊', name: 'Anxious', tagline: 'Calm and predictable',
+    desc: 'Urgency language removed. You see what to expect before you read anything.',
     color: 'bg-teal-50', border: 'border-teal-100', text: 'text-teal-700',
-    badge: 'bg-teal-100 text-teal-600', float: 'float-d',
+    badge: 'bg-teal-100 text-teal-600',
   },
   {
-    icon: '🌱', name: 'Stressed',    tagline: 'Small steps forward',
-    desc: 'Content becomes a checklist. Encouraging messages appear as you tick each step off.',
+    icon: '🌱', name: 'Stressed', tagline: 'Small steps forward',
+    desc: 'Content becomes a checkable step list with encouragement as you progress.',
     color: 'bg-green-50', border: 'border-green-100', text: 'text-green-700',
-    badge: 'bg-green-100 text-green-600', float: 'float-e',
+    badge: 'bg-green-100 text-green-600',
+  },
+  {
+    icon: '🌿', name: 'Calm', tagline: 'Full access, clear mind',
+    desc: 'When you feel steady, ClearPath steps back and lets you work uninterrupted.',
+    color: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-700',
+    badge: 'bg-indigo-100 text-indigo-600',
+  },
+  {
+    icon: '📄', name: 'Original', tagline: 'Unmodified view',
+    desc: 'See the original content exactly as it is, with no modifications applied.',
+    color: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700',
+    badge: 'bg-slate-100 text-slate-600',
   },
 ];
 
-const FEATURES = [
-  { icon: '✨', title: 'Content Transformation',     desc: 'Instantly convert any text into simplified language, bullet points, or a clean summary.' },
-  { icon: '🔊', title: 'Read Aloud with Highlight',  desc: 'Word-level highlighting as text is read aloud. Pause, resume, or hear one sentence at a time.' },
-  { icon: '📋', title: 'Step-by-Step Task Guidance', desc: 'Instructions auto-detect into a checkable step list you can tick through at your own pace.' },
-  { icon: '💾', title: 'Session Save & Restore',      desc: 'Pick up exactly where you left off. Your mode, progress, and text are restored automatically.' },
-  { icon: '🎯', title: 'Focus Controller',            desc: 'One section visible at a time. A breathing guide is built in when you need a moment.' },
-  { icon: '🤍', title: 'No Diagnosis Required',       desc: 'No labels, no forms, no clinical language. Select how you feel and the interface adapts.' },
+const WHAT_IT_DOES = [
+  {
+    icon: '✨', title: 'Simplify complex content',
+    desc: 'Instantly converts dense or confusing text into plain, readable language — removing jargon and reducing cognitive load.',
+  },
+  {
+    icon: '📋', title: 'Break tasks into steps',
+    desc: 'Instructions and procedures are automatically turned into a clear, checkable step-by-step list you can work through at your own pace.',
+  },
+  {
+    icon: '🔊', title: 'Read content aloud',
+    desc: 'Any text can be read aloud with word-level highlighting, so you can listen and follow along without losing your place.',
+  },
+  {
+    icon: '💡', title: 'Explain unfamiliar terms',
+    desc: 'Select any word or phrase to get a plain-English definition. No dictionary tabs, no searching — just instant clarity.',
+  },
 ];
 
-const HOW = [
-  { n: '01', title: 'Choose your mode',      desc: 'Select how you feel right now — overwhelmed, foggy, anxious, stressed, or calm.' },
-  { n: '02', title: 'Paste your content',    desc: 'Drop in any text: an email, article, instructions, or document you need to read.' },
-  { n: '03', title: 'Let ClearPath adapt it', desc: 'Layout, text, colour, and guidance change instantly. You focus — ClearPath handles the rest.' },
+const ETHICS = [
+  {
+    icon: '🔒', title: 'ClearPath does not diagnose you',
+    desc: 'Modes are self-selected based on how you feel. No labels, no assessments, no clinical language is used anywhere.',
+  },
+  {
+    icon: '👁️', title: 'No hidden monitoring',
+    desc: 'ClearPath does not record your screen, track your activity, or send data about what you read.',
+  },
+  {
+    icon: '🤝', title: 'You control what is shared',
+    desc: 'You paste or type the content you want help with. Nothing is captured without your direct action.',
+  },
+  {
+    icon: '🪟', title: 'Overlay Mode is user-activated',
+    desc: 'The overlay panel only opens when you launch it. It does not run in the background or start automatically.',
+  },
 ];
 
 const MARQUEE_ITEMS = [
-  '🌿 Calm Mode', '🌸 Overwhelmed Mode', '🌥️ Foggy Mode', '🌊 Anxious Mode', '🌱 Stressed Mode',
-  '✨ Content Simplification', '🔊 Read Aloud', '📋 Step Guidance', '💾 Save Progress', '🎯 Focus Mode',
+  '🌿 Calm Mode', '🌸 Overwhelmed Mode', '🌥️ Foggy Mode', '🌊 Anxious Mode', '🌱 Stressed Mode', '📄 Original Mode',
+  '✨ Simplify', '🔊 Read Aloud', '📋 Step Guidance', '💡 Define', '🪟 Overlay Mode', '📋 Workspace Mode',
 ];
 
 /* ── Scroll animation hook ─────────────────────────────────────── */
@@ -66,12 +98,69 @@ function useScrollFade() {
     els.forEach(el => observer.observe(el));
     return () => observer.disconnect();
   }, []);
-  const set = (i) => el => { ref.current[i] = el; };
-  return set;
+  return (i) => el => { ref.current[i] = el; };
+}
+
+/* ── Static Overlay Mockup ─────────────────────────────────────── */
+function OverlayMockup() {
+  return (
+    <div className="relative rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 min-h-[240px] flex items-center justify-center p-6">
+      {/* Fake background webpage */}
+      <div className="absolute inset-0 p-5 opacity-20 pointer-events-none overflow-hidden">
+        {[80, 100, 90, 100, 70, 60, 95, 80].map((w, i) => (
+          <div key={i} className="h-2 bg-slate-500 rounded mb-2" style={{ width: `${w}%` }} />
+        ))}
+      </div>
+      {/* Floating panel */}
+      <div className="relative z-10 w-56 rounded-2xl overflow-hidden shadow-2xl select-none"
+        style={{ background: '#0F172A', border: '1.5px solid rgba(92,122,78,0.5)' }}>
+        {/* Title bar */}
+        <div className="px-3 py-2.5 flex items-center justify-between"
+          style={{ background: '#1a2e1a' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🌿</span>
+            <span className="text-white font-bold text-xs">ClearPath</span>
+            <span className="text-xs px-1.5 py-0.5 rounded text-green-300 font-mono"
+              style={{ background: 'rgba(74,222,128,0.15)', fontSize: 9 }}>Overlay</span>
+          </div>
+          <div className="flex gap-1">
+            <div className="w-4 h-4 rounded bg-slate-600 text-[9px] text-slate-400 flex items-center justify-center">−</div>
+            <div className="w-4 h-4 rounded bg-slate-600 text-[9px] text-slate-400 flex items-center justify-center">✕</div>
+          </div>
+        </div>
+        {/* Body */}
+        <div className="p-3 space-y-2.5" style={{ background: '#0F172A' }}>
+          <div className="text-[10px] font-semibold text-slate-400 px-0.5">🌿 Calm mode</div>
+          <div className="bg-slate-800 rounded-lg px-2.5 py-2 border border-slate-700">
+            <p className="text-[10px] text-slate-500 italic">Paste text to analyse…</p>
+          </div>
+          <div className="grid grid-cols-2 gap-1">
+            {['✨ Simplify', '💡 Explain', '📋 Steps', '📖 Define'].map(b => (
+              <div key={b} className="text-[9px] font-semibold px-2 py-1.5 rounded-lg text-center"
+                style={{ background: '#1E3A1E', color: '#86EFAC' }}>{b}</div>
+            ))}
+          </div>
+          <div className="rounded-lg p-2.5" style={{ background: '#1E3A1E' }}>
+            <p className="text-[9px] font-bold uppercase tracking-wide mb-1" style={{ color: '#4ADE80', fontSize: 8 }}>
+              Plain English
+            </p>
+            <p className="text-[10px] leading-relaxed" style={{ color: '#D1FAE5' }}>
+              This notice needs your attention. You have time and options to decide.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <div className="flex-1 h-px bg-slate-700" />
+            <span className="text-[8px] text-slate-600">User-selected mode · You stay in control</span>
+            <div className="flex-1 h-px bg-slate-700" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ── Navbar ────────────────────────────────────────────────────── */
-function Navbar({ onSignIn, onGetStarted, onTryDemo }) {
+function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 20);
@@ -82,78 +171,60 @@ function Navbar({ onSignIn, onGetStarted, onTryDemo }) {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'nav-scrolled' : 'bg-transparent'}`}>
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
         <a href="#" className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-violet-500 rounded-xl flex items-center justify-center text-lg shadow-md shadow-violet-200">
             🌿
           </div>
           <span className="font-bold text-slate-800 text-base">ClearPath</span>
+          <span className="hidden sm:inline text-[10px] font-mono font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full ml-1">
+            by ODAI
+          </span>
         </a>
 
-        {/* Links (desktop) */}
         <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
           <a href="#how-it-works" className="hover:text-slate-800 transition-colors">How it works</a>
-          <a href="#modes"        className="hover:text-slate-800 transition-colors">Modes</a>
-          <a href="#features"     className="hover:text-slate-800 transition-colors">Features</a>
-          <a
-            href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 text-slate-700 hover:text-slate-900 font-semibold transition-colors"
-          >
-            ⬇ Download
-          </a>
+          <a href="#overlay-mode"  className="hover:text-slate-800 transition-colors">Overlay Mode</a>
+          <a href="#modes"         className="hover:text-slate-800 transition-colors">Modes</a>
+          <a href="#privacy"       className="hover:text-slate-800 transition-colors">Privacy</a>
         </div>
 
-        {/* Auth */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onSignIn}
-            className="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 rounded-xl hover:bg-slate-100 transition-all duration-200"
-          >
-            Sign in
-          </button>
-          <button
-            onClick={onTryDemo}
-            className="text-sm font-semibold border-2 border-violet-200 text-violet-600 hover:border-violet-400 hover:text-violet-700 px-5 py-2 rounded-xl transition-all duration-200 hover:bg-violet-50"
-          >
-            Try Demo
-          </button>
-          <button
-            onClick={onGetStarted}
-            className="text-sm font-semibold bg-violet-500 hover:bg-violet-600 text-white px-5 py-2 rounded-xl transition-all duration-200 shadow-md shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5"
-          >
-            Get started free
-          </button>
-        </div>
+        <a
+          href={DOWNLOAD_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 text-sm shadow-md hover:-translate-y-0.5"
+        >
+          <span>⬇</span>
+          <span className="hidden sm:inline">Download for Windows</span>
+          <span className="sm:hidden">Download</span>
+        </a>
       </div>
     </nav>
   );
 }
 
 /* ── HomePage ──────────────────────────────────────────────────── */
-export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
+export default function HomePage() {
   const fade = useScrollFade();
-  let fi = 0; // fade index counter
+  let fi = 0;
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      <Navbar onSignIn={onSignIn} onGetStarted={onGetStarted} onTryDemo={onTryDemo} />
+      <Navbar />
 
       {/* ── HERO ──────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
-        {/* Ambient blobs */}
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-violet-200 rounded-full bg-blob opacity-30 pointer-events-none" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-teal-200 rounded-full bg-blob-2 opacity-25 pointer-events-none" />
-        <div className="absolute top-40 right-10 w-64 h-64 bg-amber-100 rounded-full bg-blob opacity-20 pointer-events-none" />
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-violet-100 rounded-full opacity-40 pointer-events-none"
+          style={{ filter: 'blur(80px)' }} />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-teal-100 rounded-full opacity-30 pointer-events-none"
+          style={{ filter: 'blur(80px)' }} />
 
         <div className="relative max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center py-24">
-          {/* Left — text */}
           <div>
             <div className="hero-in-0 flex flex-wrap items-center gap-2 mb-6">
               <div className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 text-xs font-semibold px-4 py-2 rounded-full">
                 <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
-                Adapts to how you feel, not the other way around
+                Desktop assistant for difficult digital tasks
               </div>
               <div className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 text-xs font-mono font-semibold px-3 py-2 rounded-full">
                 Powered by ODAI
@@ -161,74 +232,51 @@ export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
             </div>
 
             <h1 className="hero-in-1 text-5xl lg:text-6xl font-bold text-slate-900 leading-[1.08] tracking-tight mb-6">
-              Stressful pages made{' '}
-              <span className="gradient-text">easy to complete</span>
+              Adaptive support for{' '}
+              <span className="gradient-text">digital tasks</span>,{' '}
+              based on how you feel.
             </h1>
 
-            <p className="hero-in-2 text-lg text-slate-500 leading-relaxed mb-8 max-w-lg">
-              ClearPath uses ODAI to transform confusing, overwhelming content
-              based on how you feel right now — reducing cognitive load and making
-              every task easier to act on.
+            <p className="hero-in-2 text-lg text-slate-500 leading-relaxed mb-10 max-w-lg">
+              ClearPath sits on top of any app as a small floating assistant. Paste in
+              confusing content — an email, a form, a document — and it instantly simplifies,
+              explains, or guides you through it, based on the mode you choose.
             </p>
 
-            <div className="hero-in-3 mb-8">
-              <div className="flex flex-wrap gap-3 mb-4">
-                <button
-                  onClick={onTryDemo}
-                  className="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 shadow-xl shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5 text-sm"
-                >
-                  Try Demo — see it live
-                  <span className="text-violet-200">→</span>
-                </button>
-                <button
-                  onClick={onGetStarted}
-                  className="inline-flex items-center gap-2 border-2 border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 hover:bg-slate-50 text-sm"
-                >
-                  Get started free
-                </button>
-              </div>
-              <div>
-                <a
-                  href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-sm"
-                >
-                  <span>⬇</span>
-                  Download for Windows
-                </a>
-                <p className="text-xs text-slate-400 mt-2 ml-1">
-                  Windows desktop version. Web version also available.
-                </p>
-              </div>
+            <div className="hero-in-3 flex flex-wrap gap-4">
+              <a
+                href={DOWNLOAD_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-200 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 text-base"
+              >
+                <span className="text-xl">⬇</span>
+                Download Desktop App
+              </a>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center gap-2 border-2 border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold px-8 py-4 rounded-2xl transition-all duration-200 hover:bg-slate-50 text-base"
+              >
+                See How It Works
+              </a>
             </div>
 
-            <div className="hero-in-4 flex items-center gap-3 text-sm text-slate-400">
-              <div className="flex -space-x-2">
-                {['🧑', '👩', '🧑‍💻', '👨'].map((e, i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-base">
-                    {e}
-                  </div>
-                ))}
-              </div>
-              <span>No account required to get started · Free forever</span>
-            </div>
+            <p className="hero-in-4 text-xs text-slate-400 mt-5">
+              Windows · Free to download · Overlay Mode requires the desktop app
+            </p>
           </div>
 
           {/* Right — floating mode cards */}
           <div className="hidden lg:block relative h-[480px]">
             {[
-              { m: MODES[0], pos: 'top-0 left-8',         size: 'w-52' },
-              { m: MODES[1], pos: 'top-4 right-0',         size: 'w-48' },
-              { m: MODES[2], pos: 'top-40 left-0',         size: 'w-44' },
-              { m: MODES[3], pos: 'top-44 right-8',        size: 'w-52' },
-              { m: MODES[4], pos: 'bottom-0 left-20',      size: 'w-48' },
-            ].map(({ m, pos, size }, i) => (
-              <div
-                key={m.name}
-                className={`absolute ${pos} ${size} ${m.float}`}
-              >
-                <div className={`${m.color} ${m.border} border rounded-2xl p-4 shadow-lg backdrop-blur-sm`}>
+              { m: MODES[0], pos: 'top-0 left-8',     size: 'w-52', anim: 'float-a' },
+              { m: MODES[2], pos: 'top-4 right-0',    size: 'w-48', anim: 'float-b' },
+              { m: MODES[4], pos: 'top-40 left-0',    size: 'w-44', anim: 'float-c' },
+              { m: MODES[1], pos: 'top-44 right-8',   size: 'w-52', anim: 'float-d' },
+              { m: MODES[3], pos: 'bottom-0 left-20', size: 'w-48', anim: 'float-e' },
+            ].map(({ m, pos, size, anim }) => (
+              <div key={m.name} className={`absolute ${pos} ${size} ${anim}`}>
+                <div className={`${m.color} ${m.border} border rounded-2xl p-4 shadow-lg`}>
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-2xl">{m.icon}</span>
                     <div>
@@ -236,19 +284,17 @@ export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
                       <p className="text-xs text-slate-400">{m.tagline}</p>
                     </div>
                   </div>
-                  <div className={`h-1.5 ${m.badge.split(' ')[0]} rounded-full`}>
-                    <div className={`h-full w-3/5 ${m.badge.split(' ')[0].replace('50','300').replace('100','400')} rounded-full`} />
+                  <div className="h-1.5 bg-slate-100 rounded-full">
+                    <div className={`h-full w-3/5 ${m.badge.split(' ')[0].replace('50','200').replace('100','300')} rounded-full`} />
                   </div>
                 </div>
               </div>
             ))}
-            {/* Decorative circles */}
             <div className="absolute bottom-16 right-4 w-24 h-24 border-2 border-dashed border-violet-100 rounded-full float-b" />
             <div className="absolute top-24 left-4 w-16 h-16 border-2 border-dashed border-teal-100 rounded-full float-d" />
           </div>
         </div>
 
-        {/* Scroll hint */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-300">
           <span className="text-xs">Scroll to explore</span>
           <div className="w-5 h-8 border-2 border-slate-200 rounded-full flex items-start justify-center pt-1.5">
@@ -269,248 +315,29 @@ export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
         </div>
       </div>
 
-      {/* ── TWO MODES ────────────────────────────────────────── */}
-      <section id="modes-overview" className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div ref={fade(fi++)} className="scroll-fade text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest text-violet-500 mb-3">Two ways to use ClearPath</p>
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">One assistant. Two experiences.</h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              Use the Overlay while you work in any app, or open the Workspace for deep focus and full processing.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-6">
-
-            {/* ── Overlay Mode card ────────────────────── */}
-            <div ref={fade(fi++)} className="scroll-fade delay-1 rounded-3xl bg-slate-900 p-8 flex flex-col gap-6">
-              <div>
-                <div className="inline-flex items-center gap-2 bg-green-900/50 text-green-400 text-xs font-bold px-3 py-1.5 rounded-full mb-4">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                  Primary mode · Desktop app
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">🪟 Overlay Mode</h3>
-                <p className="text-slate-400 leading-relaxed">
-                  A floating assistant that sits on top of any app or website. Paste in text, choose your mode,
-                  and get instant help — without leaving what you were doing.
-                </p>
-              </div>
-
-              {/* Mini overlay mockup */}
-              <div className="relative rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 min-h-[200px] flex items-center justify-center">
-                {/* Background — fake webpage */}
-                <div className="absolute inset-0 p-4 opacity-30 pointer-events-none overflow-hidden">
-                  <div className="h-3 bg-slate-600 rounded w-3/4 mb-2" />
-                  <div className="h-2 bg-slate-700 rounded w-full mb-1.5" />
-                  <div className="h-2 bg-slate-700 rounded w-5/6 mb-1.5" />
-                  <div className="h-2 bg-slate-700 rounded w-full mb-1.5" />
-                  <div className="h-2 bg-slate-700 rounded w-4/5 mb-4" />
-                  <div className="h-3 bg-slate-600 rounded w-1/2 mb-2" />
-                  <div className="h-2 bg-slate-700 rounded w-full mb-1.5" />
-                  <div className="h-2 bg-slate-700 rounded w-3/4" />
-                </div>
-                {/* Floating panel mockup */}
-                <div className="relative z-10 w-52 rounded-2xl overflow-hidden shadow-2xl"
-                  style={{ background: '#fff', border: '1.5px solid rgba(92,122,78,0.3)' }}>
-                  <div className="px-3 py-2 flex items-center justify-between"
-                    style={{ background: '#5C7A4E' }}>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm">🌿</span>
-                      <span className="text-white font-bold text-xs">ClearPath</span>
-                      <span className="text-white/50 text-[9px] font-mono">Overlay</span>
-                    </div>
-                    <div className="flex gap-1">
-                      <div className="w-4 h-4 rounded bg-white/20" />
-                      <div className="w-4 h-4 rounded bg-white/20" />
-                    </div>
-                  </div>
-                  <div className="p-2.5 space-y-2">
-                    <div className="text-[10px] font-semibold text-slate-500 px-1">🌿 Calm mode</div>
-                    <div className="bg-slate-100 rounded-lg px-2.5 py-2">
-                      <p className="text-[10px] text-slate-400 italic">Paste text to analyse…</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1">
-                      {['✨ Simplify','💡 Explain','📋 Steps','📖 Define'].map(b => (
-                        <div key={b} className="text-[9px] font-semibold px-2 py-1.5 rounded-lg text-center"
-                          style={{ background: '#E2EAD9', color: '#2A3D22' }}>{b}</div>
-                      ))}
-                    </div>
-                    <div className="rounded-lg p-2" style={{ background: '#E2EAD9' }}>
-                      <p className="text-[9px] font-bold uppercase tracking-wide mb-1" style={{ color: '#5C7A4E' }}>Plain English</p>
-                      <p className="text-[9px] leading-relaxed" style={{ color: '#2A3D22' }}>
-                        This notice requires your attention. You have options and time to decide.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <ul className="space-y-2">
-                {['Stays on top of any app or browser','Paste text or type a question','Instant simplified output','Choose your mode anytime','No recording, no monitoring'].map(item => (
-                  <li key={item} className="flex items-center gap-2.5 text-sm text-slate-400">
-                    <span className="w-4 h-4 rounded-full bg-green-900/50 flex items-center justify-center text-green-400 text-[10px] flex-shrink-0">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
-              <a
-                href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
-                target="_blank" rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-bold px-6 py-3 rounded-2xl text-sm hover:bg-slate-100 transition-colors shadow-lg"
-              >
-                ⬇ Download for Windows
-              </a>
-            </div>
-
-            {/* ── Workspace Mode card ──────────────────── */}
-            <div ref={fade(fi++)} className="scroll-fade delay-2 rounded-3xl bg-violet-50 border border-violet-100 p-8 flex flex-col gap-6">
-              <div>
-                <div className="inline-flex items-center gap-2 bg-violet-100 text-violet-600 text-xs font-bold px-3 py-1.5 rounded-full mb-4">
-                  Web &amp; Desktop
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">📋 Workspace Mode</h3>
-                <p className="text-slate-500 leading-relaxed">
-                  A full-screen experience for reading, uploading, and processing content in depth.
-                  Step-by-step guidance, comparison views, and every ClearPath feature in one place.
-                </p>
-              </div>
-
-              {/* Mini workspace mockup */}
-              <div className="rounded-2xl overflow-hidden border border-violet-200 bg-white shadow-md">
-                <div className="bg-slate-800 px-3 py-2 flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    {['bg-red-400','bg-amber-400','bg-green-400'].map(c => <div key={c} className={`w-2.5 h-2.5 rounded-full ${c}`} />)}
-                  </div>
-                  <div className="flex-1 bg-slate-700 rounded text-[10px] text-slate-400 px-2 py-0.5 text-center">
-                    clearpath.app/demo
-                  </div>
-                </div>
-                <div className="flex" style={{ height: 160 }}>
-                  <div className="flex-1 p-3 overflow-hidden">
-                    <div className="h-2 bg-violet-100 rounded w-3/4 mb-1.5" />
-                    <div className="h-1.5 bg-slate-100 rounded w-full mb-1" />
-                    <div className="h-1.5 bg-slate-100 rounded w-5/6 mb-1" />
-                    <div className="h-1.5 bg-slate-100 rounded w-full mb-1" />
-                    <div className="h-1.5 bg-slate-100 rounded w-4/5 mb-2.5" />
-                    <div className="flex gap-1.5">
-                      <div className="flex-1 h-1.5 bg-slate-100 rounded" />
-                      <div className="flex-1 h-1.5 bg-violet-100 rounded" />
-                    </div>
-                  </div>
-                  <div className="w-24 bg-violet-50 border-l border-violet-100 p-2">
-                    {['🌿','🌸','🌥️','🌊','🌱'].map((icon, i) => (
-                      <div key={i} className={`flex items-center gap-1 px-1.5 py-1 rounded-lg mb-0.5 text-[9px] ${i === 0 ? 'bg-violet-200 font-semibold text-violet-700' : 'text-slate-400'}`}>
-                        <span>{icon}</span>
-                        {['Calm','Overwhelmed','Foggy','Anxious','Stressed'][i]}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <ul className="space-y-2">
-                {['Paste text or upload PDF / TXT','Full step-by-step guidance system','Before & after comparison view','All five adaptive modes','Works in any browser — no install needed'].map(item => (
-                  <li key={item} className="flex items-center gap-2.5 text-sm text-slate-500">
-                    <span className="w-4 h-4 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 text-[10px] flex-shrink-0">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={onTryDemo}
-                className="inline-flex items-center justify-center gap-2 bg-violet-500 hover:bg-violet-600 text-white font-bold px-6 py-3 rounded-2xl text-sm transition-colors shadow-lg shadow-violet-200"
-              >
-                Try Workspace Demo →
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ─────────────────────────────────────── */}
+      {/* ── WHAT IT DOES ─────────────────────────────────────── */}
       <section id="how-it-works" className="py-28 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <div ref={fade(fi++)} className="scroll-fade text-center mb-16">
-            <p className="text-xs font-bold uppercase tracking-widest text-violet-500 mb-3">How it works</p>
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">Three steps to clarity</h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              No setup, no learning curve. Open ClearPath, select your mode, and start reading.
+            <p className="text-xs font-bold uppercase tracking-widest text-violet-500 mb-3">What it does</p>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              Digital content, made easier to handle
+            </h2>
+            <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
+              ClearPath helps you simplify, understand, and complete difficult digital tasks —
+              emails, forms, notices, articles — using support modes you choose yourself.
+              No account required. No setup. Just clarity.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Connecting line */}
-            <div className="hidden md:block absolute top-12 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-violet-200 via-teal-200 to-green-200" />
-
-            {HOW.map(({ n, title, desc }, i) => (
-              <div key={n} ref={fade(fi++)} className={`scroll-fade delay-${i + 1} flex flex-col items-center text-center`}>
-                <div className="relative w-24 h-24 bg-gradient-to-br from-violet-50 to-teal-50 border-2 border-slate-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                  <span className="text-3xl font-bold text-slate-200">{n}</span>
-                </div>
-                <h3 className="font-bold text-slate-800 text-lg mb-2">{title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── MODES SHOWCASE ───────────────────────────────────── */}
-      <section id="modes" className="py-28 bg-slate-900">
-        <div className="max-w-6xl mx-auto px-6">
-          <div ref={fade(fi++)} className="scroll-fade text-center mb-16">
-            <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-3">Five modes</p>
-            <h2 className="text-4xl font-bold text-white mb-4">One clear path forward</h2>
-            <p className="text-slate-400 text-lg max-w-xl mx-auto">
-              Each mode is a completely different experience — not just a colour change.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {MODES.map((m, i) => (
-              <div
-                key={m.name}
-                ref={fade(fi++)}
-                className={`scroll-fade delay-${i + 1} group relative bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-default`}
-              >
-                <div className={`${m.badge} inline-flex items-center justify-center w-12 h-12 rounded-2xl text-2xl mb-4`}>
-                  {m.icon}
-                </div>
-                <h3 className="font-bold text-white mb-1 text-sm">{m.name}</h3>
-                <p className="text-slate-400 text-xs mb-3">{m.tagline}</p>
-                <p className="text-slate-500 text-xs leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute inset-x-5 bottom-5 top-auto bg-slate-700 rounded-xl p-3 pointer-events-none">
-                  {m.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES GRID ────────────────────────────────────── */}
-      <section id="features" className="py-28 bg-slate-50">
-        <div className="max-w-5xl mx-auto px-6">
-          <div ref={fade(fi++)} className="scroll-fade text-center mb-16">
-            <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-3">Features</p>
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">Built to reduce cognitive load</h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              Every feature was designed to make digital content easier to understand and act on.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map(({ icon, title, desc }, i) => (
-              <div
-                key={title}
-                ref={fade(fi++)}
-                className={`scroll-fade delay-${(i % 3) + 1} bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
-              >
-                <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center text-xl mb-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {WHAT_IT_DOES.map(({ icon, title, desc }, i) => (
+              <div key={title} ref={fade(fi++)}
+                className={`scroll-fade delay-${i + 1} bg-slate-50 rounded-2xl p-6 border border-slate-100`}>
+                <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-2xl mb-4 shadow-sm border border-slate-100">
                   {icon}
                 </div>
-                <h3 className="font-bold text-slate-800 mb-1.5 text-sm">{title}</h3>
+                <h3 className="font-bold text-slate-800 mb-2 text-sm leading-snug">{title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -518,44 +345,228 @@ export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
         </div>
       </section>
 
-      {/* ── QUOTE ────────────────────────────────────────────── */}
-      <section className="py-28 bg-gradient-to-br from-violet-600 via-violet-500 to-teal-500 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-        <div ref={fade(fi++)} className="scroll-fade relative max-w-3xl mx-auto px-6 text-center">
-          <p className="text-5xl text-white/20 font-serif mb-4">"</p>
-          <p className="text-3xl lg:text-4xl font-bold text-white leading-tight mb-6">
-            Your content. Your pace. Your way.
-          </p>
-          <p className="text-violet-200 text-base">
-            ClearPath meets you where you are — not where the website expects you to be.
-          </p>
+      {/* ── OVERLAY MODE ─────────────────────────────────────── */}
+      <section id="overlay-mode" className="py-28 bg-slate-900">
+        <div className="max-w-6xl mx-auto px-6">
+          <div ref={fade(fi++)} className="scroll-fade text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-green-400 mb-3">Primary feature</p>
+            <h2 className="text-4xl font-bold text-white mb-4">🪟 Overlay Mode</h2>
+            <p className="text-slate-400 text-lg max-w-xl mx-auto">
+              A floating assistant panel that lives on top of any app or website.
+              It opens when you need it and stays out of the way when you don't.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* Explanation */}
+            <div ref={fade(fi++)} className="scroll-fade space-y-6">
+              {[
+                {
+                  icon: '🪟',
+                  title: 'Floats above any app',
+                  desc: 'The Overlay panel sits on top of your screen — above your browser, email client, documents, or any other window. You never lose your place.',
+                },
+                {
+                  icon: '📋',
+                  title: 'Paste or type content',
+                  desc: 'Copy any text you find difficult — a confusing email, a legal notice, a complex form — and paste it into the panel. ClearPath processes it immediately.',
+                },
+                {
+                  icon: '✨',
+                  title: 'Simplify, explain, define, guide',
+                  desc: 'Four actions are available for any content: Simplify (plain English), Explain (in detail), Steps (break into tasks), and Define (look up a word).',
+                },
+                {
+                  icon: '🔊',
+                  title: 'Read it aloud',
+                  desc: 'Any output can be read aloud with adjustable speed. The panel highlights each word as it is spoken so you can follow along easily.',
+                },
+                {
+                  icon: '🤝',
+                  title: 'Always user-controlled',
+                  desc: 'Overlay Mode only opens when you launch it. It does not monitor your activity, read your screen, or run in the background without your action.',
+                },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                    style={{ background: 'rgba(74,222,128,0.1)' }}>
+                    {icon}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white mb-1 text-sm">{title}</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+                  </div>
+                </div>
+              ))}
+
+              <div className="pt-2">
+                <a
+                  href={DOWNLOAD_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2.5 bg-white text-slate-900 font-bold px-6 py-3 rounded-2xl text-sm hover:bg-slate-100 transition-colors shadow-lg"
+                >
+                  ⬇ Download for Windows
+                </a>
+                <p className="text-slate-600 text-xs mt-2">Overlay Mode is available in the desktop app only.</p>
+              </div>
+            </div>
+
+            {/* Visual mockup */}
+            <div ref={fade(fi++)} className="scroll-fade delay-2">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4 text-center">
+                Visual preview — not interactive
+              </p>
+              <OverlayMockup />
+              <p className="text-slate-600 text-xs text-center mt-3">
+                The panel is draggable, collapsible, and always on top of other windows.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ────────────────────────────────────────── */}
-      <section className="py-28 bg-white">
-        <div ref={fade(fi++)} className="scroll-fade max-w-2xl mx-auto px-6 text-center">
-          <div className="text-5xl mb-6">🌿</div>
-          <h2 className="text-4xl font-bold text-slate-900 mb-4">Ready to take back control?</h2>
-          <p className="text-slate-500 text-lg mb-10 leading-relaxed">
-            See ClearPath in action on a real stressful page — then start using it
-            on any content. No account needed. No diagnosis required.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button
-              onClick={onTryDemo}
-              className="inline-flex items-center gap-2 bg-violet-500 hover:bg-violet-600 text-white font-semibold px-8 py-4 rounded-2xl transition-all duration-200 shadow-xl shadow-violet-200 hover:shadow-violet-300 hover:-translate-y-0.5 text-base"
-            >
-              Try Demo →
-            </button>
-            <button
-              onClick={onGetStarted}
-              className="inline-flex items-center gap-2 border-2 border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-900 font-semibold px-8 py-4 rounded-2xl transition-all duration-200 hover:bg-slate-50 text-base"
-            >
-              Get started free
-            </button>
+      {/* ── WORKSPACE MODE ───────────────────────────────────── */}
+      <section className="py-28 bg-slate-50">
+        <div className="max-w-5xl mx-auto px-6">
+          <div ref={fade(fi++)} className="scroll-fade text-center mb-14">
+            <p className="text-xs font-bold uppercase tracking-widest text-violet-500 mb-3">Secondary mode</p>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">📋 Workspace Mode</h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">
+              A full-screen reading and analysis environment for when you want to go deeper.
+            </p>
           </div>
-          <p className="text-xs text-slate-300 mt-6">Powered by ODAI · Free forever · Data stays on your device · No diagnosis</p>
+
+          <div ref={fade(fi++)} className="scroll-fade grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: '📄',
+                title: 'Upload or paste content',
+                desc: 'Bring in any text — a document, article, notice, or instructions. The workspace formats it cleanly for processing.',
+              },
+              {
+                icon: '🔍',
+                title: 'Get summaries, steps, and simplified versions',
+                desc: 'Transform content into a summary, a step list, or a fully simplified version — all in one place with side-by-side comparison.',
+              },
+              {
+                icon: '📖',
+                title: 'Useful for deeper reading or analysis',
+                desc: 'When you need more time and space, the full workspace gives you all five adaptive modes, progress tracking, and read-aloud support.',
+              },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                <div className="w-12 h-12 bg-violet-50 rounded-2xl flex items-center justify-center text-2xl mb-4">
+                  {icon}
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">{title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div ref={fade(fi++)} className="scroll-fade mt-10 text-center">
+            <p className="text-slate-400 text-sm">
+              Workspace Mode is available in both the desktop app and the browser.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── MODES ────────────────────────────────────────────── */}
+      <section id="modes" className="py-28 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <div ref={fade(fi++)} className="scroll-fade text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-violet-500 mb-3">Support modes</p>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">You choose your mode</h2>
+            <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
+              There are six modes. You select the one that matches how you feel right now.
+              ClearPath adapts the interface and output instantly — no account, no setup.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {MODES.map((m, i) => (
+              <div key={m.name} ref={fade(fi++)}
+                className={`scroll-fade delay-${(i % 3) + 1} ${m.color} ${m.border} border rounded-2xl p-6`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-3xl">{m.icon}</span>
+                  <div>
+                    <p className={`font-bold ${m.text}`}>{m.name}</p>
+                    <p className="text-xs text-slate-400">{m.tagline}</p>
+                  </div>
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed">{m.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div ref={fade(fi++)} className="scroll-fade mt-10 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+            <p className="text-slate-600 text-sm leading-relaxed max-w-xl mx-auto">
+              <strong className="text-slate-800">Modes are always manually selected.</strong>{' '}
+              ClearPath never automatically assigns a mode or makes assumptions about how you feel.
+              You are always in control of which mode is active.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ETHICS / PRIVACY ─────────────────────────────────── */}
+      <section id="privacy" className="py-28 bg-slate-900">
+        <div className="max-w-5xl mx-auto px-6">
+          <div ref={fade(fi++)} className="scroll-fade text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-teal-400 mb-3">Ethics and privacy</p>
+            <h2 className="text-4xl font-bold text-white mb-4">Designed with care</h2>
+            <p className="text-slate-400 text-lg max-w-xl mx-auto">
+              ClearPath was built to support people, not to label, monitor, or exploit them.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            {ETHICS.map(({ icon, title, desc }, i) => (
+              <div key={title} ref={fade(fi++)}
+                className={`scroll-fade delay-${(i % 2) + 1} bg-slate-800 border border-slate-700 rounded-2xl p-6`}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-4"
+                  style={{ background: 'rgba(45,212,191,0.1)' }}>
+                  {icon}
+                </div>
+                <h3 className="font-bold text-white mb-2">{title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── DOWNLOAD CTA ─────────────────────────────────────── */}
+      <section id="download" className="py-28 bg-white">
+        <div ref={fade(fi++)} className="scroll-fade max-w-2xl mx-auto px-6 text-center">
+          <div className="text-5xl mb-6">🪟</div>
+          <h2 className="text-4xl font-bold text-slate-900 mb-4">
+            Download the desktop app
+          </h2>
+          <p className="text-slate-500 text-lg mb-10 leading-relaxed">
+            ClearPath runs as a lightweight floating assistant on Windows.
+            Overlay Mode, all six support modes, and read-aloud are included.
+            Free to download.
+          </p>
+
+          <a
+            href={DOWNLOAD_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-3 bg-slate-900 hover:bg-slate-800 text-white font-bold px-10 py-5 rounded-2xl transition-all duration-200 shadow-2xl hover:-translate-y-1 text-lg"
+          >
+            <span className="text-2xl">⬇</span>
+            Download for Windows
+          </a>
+
+          <p className="text-slate-400 text-sm mt-5">
+            Desktop app required for Overlay Mode.
+          </p>
+          <p className="text-slate-300 text-xs mt-2">
+            Windows 10 or later · Free forever · No account required
+          </p>
         </div>
       </section>
 
@@ -567,27 +578,27 @@ export default function HomePage({ onGetStarted, onSignIn, onTryDemo }) {
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-7 h-7 bg-violet-500 rounded-lg flex items-center justify-center text-base">🌿</div>
                 <span className="font-bold text-white">ClearPath</span>
+                <span className="text-[10px] font-mono text-slate-500 ml-1">by ODAI</span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">
-                A tool that adapts digital content to how you feel in the moment.
+                Adaptive support for digital tasks, based on how you feel.
                 No diagnosis. No labels. Just clarity.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-x-16 gap-y-2 text-sm">
               {[
                 ['How it works', '#how-it-works'],
+                ['Overlay Mode', '#overlay-mode'],
                 ['Modes',        '#modes'],
-                ['Features',     '#features'],
-                ['Get started',  '#'],
+                ['Privacy',      '#privacy'],
+                ['Download',     '#download'],
               ].map(([label, href]) => (
-                <a key={label} href={href}
-                  className="text-slate-500 hover:text-white transition-colors"
-                >{label}</a>
+                <a key={label} href={href} className="text-slate-500 hover:text-white transition-colors">{label}</a>
               ))}
             </div>
           </div>
           <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-            <span>© {new Date().getFullYear()} ClearPath. Built for clarity.</span>
+            <span>© {new Date().getFullYear()} ClearPath. Powered by ODAI.</span>
             <span>ClearPath does not diagnose, assess, or label users in any way.</span>
           </div>
         </div>
