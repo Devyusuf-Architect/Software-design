@@ -5,6 +5,7 @@ import ModePanel      from './components/ModePanel';
 import ContentArea    from './components/ContentArea';
 import AuthModal      from './components/auth/AuthModal';
 import DemoWorkspace  from './components/DemoWorkspace';
+import ModeSelectScreen from './components/ModeSelectScreen';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth }         from './hooks/useAuth';
 import { modeConfigs }     from './utils/modeConfigs';
@@ -42,10 +43,11 @@ export default function App() {
     if (user)                   return 'onboarding';
     return 'home';
   });
-  const [authModal,  setAuthModal]  = useState(null); // null | 'signin' | 'signup'
-  const [mode,       setMode]       = useState('calm');
-  const [text,       setText]       = useState(DEMO_TEXT);
-  const [resumeBanner, setResumeBanner] = useState(null);
+  const [authModal,     setAuthModal]     = useState(null); // null | 'signin' | 'signup'
+  const [mode,          setMode]          = useState('calm');
+  const [text,          setText]          = useState(DEMO_TEXT);
+  const [resumeBanner,  setResumeBanner]  = useState(null);
+  const [demoInitView,  setDemoInitView]  = useState('workspace'); // 'workspace' | 'overlay'
 
   // If user signs in while on homepage, advance to onboarding or app
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function App() {
   }, [user]); // eslint-disable-line
 
   /* ── Try Demo ───────────────────────────────────────────── */
-  const handleTryDemo = () => setView('demo');
+  const handleTryDemo = () => setView('mode-select');
 
   // Check for saved session on app load
   useEffect(() => {
@@ -135,9 +137,21 @@ export default function App() {
         />
       )}
 
+      {/* Mode select screen */}
+      {view === 'mode-select' && (
+        <ModeSelectScreen
+          onSelectOverlay={() => { setDemoInitView('overlay'); setView('demo'); }}
+          onSelectWorkspace={() => { setDemoInitView('workspace'); setView('demo'); }}
+          onExit={() => setView('home')}
+        />
+      )}
+
       {/* Demo workspace */}
       {view === 'demo' && (
-        <DemoWorkspace onExit={() => setView('home')} />
+        <DemoWorkspace
+          initialView={demoInitView}
+          onExit={() => setView('mode-select')}
+        />
       )}
 
       {/* Onboarding */}

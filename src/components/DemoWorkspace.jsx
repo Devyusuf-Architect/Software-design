@@ -25,7 +25,7 @@ const PANEL_MIN        = 180;
 const PANEL_MAX        = 480;
 const PANEL_DEFAULT    = 240;
 
-export default function DemoWorkspace({ onExit }) {
+export default function DemoWorkspace({ onExit, initialView = 'workspace' }) {
   const isMobile = useIsMobile();
 
   const [scenarioId,       setScenarioId]       = useState('payment');
@@ -44,8 +44,8 @@ export default function DemoWorkspace({ onExit }) {
   const [panelStyle,       setPanelStyle]       = useState('simple');
   const [startTime]                             = useState(Date.now());
 
-  // Overlay vs Workspace mode toggle
-  const [workspaceView,    setWorkspaceView]    = useState('workspace'); // 'workspace' | 'overlay'
+  // Overlay vs Workspace mode toggle — initialised from prop
+  const [workspaceView,    setWorkspaceView]    = useState(initialView);
   const [showOverlay,      setShowOverlay]      = useState(true);
 
   const contentRef = useRef(null);
@@ -210,15 +210,22 @@ export default function DemoWorkspace({ onExit }) {
       <div className="flex-shrink-0 bg-white border-b border-slate-100" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-2">
-            <button onClick={onExit} className="text-xs text-slate-400 hover:text-slate-700 transition-colors btn-micro p-1">
-              ← Back
+            <button onClick={onExit} className="text-xs text-slate-400 hover:text-slate-700 transition-colors btn-micro p-1 flex items-center gap-1">
+              ← Modes
             </button>
             <div className="w-px h-4 bg-slate-200" />
             <button onClick={onExit} className="flex items-center gap-1.5 hover:opacity-75 transition-opacity btn-micro">
               <div className="w-6 h-6 bg-slate-700 rounded-lg flex items-center justify-center text-sm">🌿</div>
               <p className="text-sm font-semibold text-slate-700">ClearPath</p>
             </button>
-            {!isMobile && <span className="text-[10px] text-slate-300 font-mono">Demo</span>}
+            {!isMobile && (
+              <span
+                className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: workspaceView === 'overlay' ? '#E2EAD9' : '#EEF2FF', color: workspaceView === 'overlay' ? '#2A3D22' : '#6366f1' }}
+              >
+                {workspaceView === 'overlay' ? '🪟 Overlay' : '📋 Workspace'}
+              </span>
+            )}
           </div>
 
           {savedBanner && <p className="text-xs text-green-600 font-semibold fade-in">✓ Saved</p>}
