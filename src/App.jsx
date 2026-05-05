@@ -6,6 +6,8 @@ import ContentArea    from './components/ContentArea';
 import AuthModal      from './components/auth/AuthModal';
 import DemoWorkspace  from './components/DemoWorkspace';
 import ModeSelectScreen from './components/ModeSelectScreen';
+import DesktopApp     from './components/desktop/DesktopApp';
+import { isTauri }    from './utils/isTauri';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useAuth }         from './hooks/useAuth';
 import { modeConfigs }     from './utils/modeConfigs';
@@ -33,6 +35,8 @@ const saveSession = (d)  => { try { localStorage.setItem(SESSION_KEY, JSON.strin
 // view: 'home' | 'onboarding' | 'app'
 // authModal: null | 'signin' | 'signup'
 export default function App() {
+  if (isTauri) return <DesktopApp />;
+
   const { user, signUp, signIn, signOut } = useAuth();
 
   const [onboardingDone, setOnboardingDone, clearOnboarding] = useLocalStorage('clearpath_onboarding', false);

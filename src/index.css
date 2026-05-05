@@ -25,6 +25,13 @@ body {
   --sal: env(safe-area-inset-left,   0px);
 }
 
+/* ── Tauri drag region ────────────────────────────────── */
+[data-tauri-drag-region] { -webkit-app-region: drag; app-region: drag; }
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] input,
+[data-tauri-drag-region] textarea,
+[data-tauri-drag-region] select { -webkit-app-region: no-drag; app-region: no-drag; }
+
 /* ── Mobile: disable text selection on buttons ────────── */
 @media (max-width: 767px) {
   button { -webkit-tap-highlight-color: transparent; user-select: none; }
