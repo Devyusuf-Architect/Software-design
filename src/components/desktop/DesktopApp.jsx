@@ -84,6 +84,24 @@ function processText(text, action) {
         summary: def || 'Paste a single word or phrase to look it up.',
       };
     }
+    case 'analyze': {
+      const urgentRegex = /\b(due|deadline|urgent|important|must|required|need to|asap|immediately|before|by\s+\w+\s+\d+|expires?|overdue)\b/i;
+      const actionRegex = /\b(pay|submit|reply|sign|review|choose|select|click|fill|complete|contact|call|visit|update|confirm|verify|return|cancel|schedule|book|register|enrol|accept|decline)\b/i;
+
+      const mainIdea = sentences[0] || raw.slice(0, 200);
+      const keyPoints = sentences.slice(1, 5).filter(s => s.length > 12);
+      const urgent = sentences.find(s => urgentRegex.test(s));
+      const action = sentences.find(s => actionRegex.test(s));
+
+      return {
+        type: 'analyze',
+        heading: '🔍 Screen analysis',
+        mainIdea,
+        keyPoints,
+        mattersMost: urgent || sentences[0] || 'No critical deadlines or urgency detected.',
+        nextStep: action || 'Decide whether to act on this now or set it aside for later.',
+      };
+    }
     default: return null;
   }
 }
@@ -92,91 +110,215 @@ function processText(text, action) {
    ANALYZE SCREEN DIALOG
    ════════════════════════════════════════════════════════════════════════ */
 function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
-  const [pastedText, setPastedText] = useState('');
+  const [pastedText,     setPastedText]     = useState('');
+  const [screenshot,     setScreenshot]     = useState(null);   // { name, dataUrl }
+  const [clipboardHint,  setClipboardHint]  = useState(null);   // 'ok' | 'empty' | 'denied'
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    // Auto-read clipboard on open, silently fail if not permitted
-    (async () => {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text?.trim()) setPastedText(text.trim());
-      } catch {}
-    })();
-    textareaRef.current?.focus();
-  }, []);
+  const fillFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text?.trim()) {
+        setPastedText(prev => (prev ? `${prev}\n\n${text.trim()}` : text.trim()));
+        setClipboardHint('ok');
+      } else {
+        setClipboardHint('empty');
+      }
+    } catch {
+      setClipboardHint('denied');
+    }
+    setTimeout(() => setClipboardHint(null), 2200);
+  };
+
+  const handleScreenshot = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => setScreenshot({ name: file.name, dataUrl: reader.result });
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const useSample = () => {
+    setPastedText(SAMPLE_TEXT);
+  };
+
+  const clipboardMsg = {
+    ok:     { text: '✓ Pasted from clipboard', color: '#4ADE80' },
+    empty:  { text: 'Clipboard is empty',       color: '#FBBF24' },
+    denied: { text: 'Clipboard access denied',   color: '#F87171' },
+  }[clipboardHint];
+
+  const canAnalyze = pastedText.trim().length > 0;
 
   return (
-    <div
-      className="absolute inset-0 z-50 flex flex-col"
-      style={{ background: '#0B1120' }}
-    >
-      {/* Header */}
+    <div className="absolute inset-0 z-50 flex flex-col" style={{ background: '#0B1120' }}>
+      {/* ── Header ─────────────────────────────────────────── */}
       <div
-        className="flex-shrink-0 flex items-center gap-3 px-5 py-4"
+        className="flex-shrink-0 flex items-center justify-between px-5 py-3.5"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
-        <span className="text-xl">🔍</span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg">🔍</span>
+          <div>
+            <p className="font-bold text-white text-sm leading-tight">Analyze Screen</p>
+            <p className="text-[11px] text-slate-500">Choose how to capture content</p>
+          </div>
+        </div>
+        <button
+          onClick={onCancel}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 text-xs transition-colors"
+        >✕</button>
+      </div>
+
+      {/* ── Content (scrollable) ───────────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
+
+        {/* Source picker */}
         <div>
-          <p className="font-bold text-white text-sm">Analyze Screen</p>
-          <p className="text-[11px] text-slate-500">Paste content copied from your screen</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+            Content source
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={fillFromClipboard}
+              className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-semibold transition-colors"
+              style={{ background: '#1E293B', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#2D3F52'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#1E293B'; }}
+            >
+              <span className="text-lg leading-none">📋</span>
+              <span>Clipboard</span>
+            </button>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-semibold transition-colors"
+              style={{ background: '#1E293B', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#2D3F52'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#1E293B'; }}
+            >
+              <span className="text-lg leading-none">📷</span>
+              <span>Screenshot</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleScreenshot}
+              className="hidden"
+            />
+
+            <button
+              onClick={useSample}
+              className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl text-xs font-semibold transition-colors"
+              style={{ background: '#1E293B', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#2D3F52'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#1E293B'; }}
+            >
+              <span className="text-lg leading-none">✦</span>
+              <span>Sample</span>
+            </button>
+          </div>
+
+          {/* Clipboard feedback */}
+          {clipboardMsg && (
+            <p className="text-[11px] mt-2 text-center" style={{ color: clipboardMsg.color }}>
+              {clipboardMsg.text}
+            </p>
+          )}
+        </div>
+
+        {/* Screenshot preview */}
+        {screenshot && (
+          <div
+            className="rounded-xl p-2.5 flex items-center gap-3"
+            style={{ background: '#1E293B', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <img
+              src={screenshot.dataUrl}
+              alt="Screenshot preview"
+              className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+              style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-300 truncate">{screenshot.name}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Reference only. Paste the text from this screenshot below.
+              </p>
+            </div>
+            <button
+              onClick={() => setScreenshot(null)}
+              className="text-slate-500 hover:text-white text-xs px-2 py-1 rounded-md hover:bg-white/10 transition-colors"
+            >✕</button>
+          </div>
+        )}
+
+        {/* Textarea */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">
+            Text to analyse
+          </p>
+          <textarea
+            ref={textareaRef}
+            value={pastedText}
+            onChange={e => setPastedText(e.target.value)}
+            placeholder="Paste or type text from your screen…"
+            className="w-full rounded-xl px-3 py-2.5 text-sm leading-relaxed placeholder-slate-600 resize-none focus:outline-none"
+            style={{
+              background: '#1E293B',
+              color: '#E2E8F0',
+              border: `1px solid ${cfg.hex.accent}30`,
+              minHeight: 110,
+              maxHeight: 180,
+            }}
+          />
+          {pastedText && (
+            <div className="flex items-center justify-between mt-1">
+              <button
+                onClick={() => setPastedText('')}
+                className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors"
+              >Clear</button>
+              <span className="text-[10px] text-slate-700">
+                {pastedText.split(/\s+/).filter(Boolean).length} words
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Ethics note */}
+        <div className="rounded-xl p-2.5 flex items-start gap-2"
+          style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)' }}
+        >
+          <span className="text-xs mt-0.5">🔒</span>
+          <p className="text-[10px] text-slate-400 leading-relaxed">
+            Nothing is captured automatically. Analysis only runs when you click
+            Analyze, and only on the text you provide above.
+          </p>
         </div>
       </div>
 
-      {/* Instructions */}
-      <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <ol className="space-y-1.5 text-sm text-slate-400">
-          <li className="flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-              style={{ background: cfg.hex.accent, color: '#fff' }}>1</span>
-            <span>Select and copy text from any window on your desktop</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-              style={{ background: cfg.hex.accent, color: '#fff' }}>2</span>
-            <span>Paste it into the box below (Ctrl + V)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-              style={{ background: cfg.hex.accent, color: '#fff' }}>3</span>
-            <span>Click Analyze — ClearPath will simplify it for you</span>
-          </li>
-        </ol>
-      </div>
-
-      {/* Textarea */}
-      <div className="flex-1 px-5 py-4 min-h-0">
-        <textarea
-          ref={textareaRef}
-          value={pastedText}
-          onChange={e => setPastedText(e.target.value)}
-          placeholder="Paste text from your screen here…"
-          className="w-full h-full rounded-xl px-3 py-2.5 text-sm leading-relaxed placeholder-slate-600 resize-none focus:outline-none"
-          style={{
-            background: '#1E293B',
-            color: '#E2E8F0',
-            border: `1px solid ${cfg.hex.accent}30`,
-            minHeight: 120,
-          }}
-        />
-      </div>
-
-      {/* Buttons */}
-      <div className="flex-shrink-0 flex items-center gap-3 px-5 pb-5">
+      {/* ── Buttons ────────────────────────────────────────── */}
+      <div
+        className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      >
         <button
           onClick={onCancel}
-          className="flex-1 py-3 rounded-xl text-sm font-semibold transition-colors"
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
           style={{ background: '#1E293B', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
         >
           Cancel
         </button>
         <button
-          onClick={() => pastedText.trim() && onConfirm(pastedText.trim())}
-          disabled={!pastedText.trim()}
-          className="flex-1 py-3 rounded-xl text-sm font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          onClick={() => canAnalyze && onConfirm(pastedText.trim())}
+          disabled={!canAnalyze}
+          className="flex-[2] py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           style={{ background: cfg.hex.accent, color: '#fff' }}
         >
-          Analyze →
+          🔍 Analyze →
         </button>
       </div>
     </div>
@@ -313,7 +455,7 @@ export default function DesktopApp() {
   const handleAnalyzeConfirm = (text) => {
     setInputText(text);
     setShowAnalyzeDialog(false);
-    runAction('simplify', text);
+    runAction('analyze', text);
   };
 
   /* ── Style helpers ────────────────────────────────────────────── */
@@ -725,41 +867,91 @@ export default function DesktopApp() {
               {output.heading}
             </p>
 
-            {output.summary && (
-              <p className="text-sm leading-relaxed text-slate-200">{output.summary}</p>
-            )}
+            {/* Analyze: structured output */}
+            {output.type === 'analyze' ? (
+              <div className="space-y-3.5">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: cfg.hex.accent }}>
+                    💡 Main idea
+                  </p>
+                  <p className="text-sm leading-relaxed text-slate-200">{output.mainIdea}</p>
+                </div>
 
-            {output.bullets?.length > 0 && (
-              <ul className="space-y-1.5">
-                {output.bullets.map((b, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-slate-300">
-                    <span className="opacity-30 flex-shrink-0 mt-0.5">·</span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+                {output.keyPoints?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: cfg.hex.accent }}>
+                      🔑 Key points
+                    </p>
+                    <ul className="space-y-1.5">
+                      {output.keyPoints.map((p, i) => (
+                        <li key={i} className="flex gap-2 text-sm text-slate-300">
+                          <span className="opacity-40 flex-shrink-0 mt-0.5">·</span>
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-            {output.steps?.length > 0 && (
-              <ol className="space-y-2">
-                {output.steps.map(({ n, text }) => (
-                  <li key={n} className="flex gap-2.5 text-sm text-slate-300">
-                    <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-                      style={{ background: cfg.hex.accent, color: '#fff' }}
-                    >{n}</span>
-                    <span>{text}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
+                <div
+                  className="rounded-xl p-3"
+                  style={{ background: cfg.hex.accent + '22', border: `1px solid ${cfg.hex.accent}40` }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: cfg.hex.accent }}>
+                    ⚡ What matters most
+                  </p>
+                  <p className="text-sm leading-relaxed text-slate-100">{output.mattersMost}</p>
+                </div>
 
-            {output.next && (
-              <div className="pt-2 border-t" style={{ borderColor: cfg.hex.accent + '25' }}>
-                <p className="text-xs font-semibold" style={{ color: cfg.hex.accent }}>
-                  Next: {output.next}
-                </p>
+                <div
+                  className="rounded-xl p-3 border-l-2"
+                  style={{ background: 'rgba(255,255,255,0.03)', borderLeftColor: cfg.hex.accent }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: cfg.hex.accent }}>
+                    → Next step
+                  </p>
+                  <p className="text-sm leading-relaxed text-slate-200">{output.nextStep}</p>
+                </div>
               </div>
+            ) : (
+              <>
+                {output.summary && (
+                  <p className="text-sm leading-relaxed text-slate-200">{output.summary}</p>
+                )}
+
+                {output.bullets?.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {output.bullets.map((b, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-slate-300">
+                        <span className="opacity-30 flex-shrink-0 mt-0.5">·</span>
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {output.steps?.length > 0 && (
+                  <ol className="space-y-2">
+                    {output.steps.map(({ n, text }) => (
+                      <li key={n} className="flex gap-2.5 text-sm text-slate-300">
+                        <span
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
+                          style={{ background: cfg.hex.accent, color: '#fff' }}
+                        >{n}</span>
+                        <span>{text}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+
+                {output.next && (
+                  <div className="pt-2 border-t" style={{ borderColor: cfg.hex.accent + '25' }}>
+                    <p className="text-xs font-semibold" style={{ color: cfg.hex.accent }}>
+                      Next: {output.next}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
