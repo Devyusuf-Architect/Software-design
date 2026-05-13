@@ -4,7 +4,7 @@ import ClearPathLogo from './ClearPathLogo';
 const DOWNLOAD_URL =
   'https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe';
 
-/* ── Minimal line icons (currentColor, 1.5 stroke) ────────────────── */
+/* ── Minimal line icons ─────────────────────────────────────────── */
 const svgBase = {
   fill: 'none',
   stroke: 'currentColor',
@@ -79,14 +79,6 @@ function Icon({ name, size = 18 }) {
           <circle cx="6.5" cy="7" r="0.4" fill="currentColor" stroke="none" />
         </svg>
       );
-    case 'camera':
-      return (
-        <svg {...p}>
-          <rect x="2" y="6" width="20" height="14" rx="2" />
-          <circle cx="12" cy="13" r="3.5" />
-          <path d="M8 6l1.5-2h5L16 6" />
-        </svg>
-      );
     case 'arrowDown':
       return (
         <svg {...p}>
@@ -99,6 +91,21 @@ function Icon({ name, size = 18 }) {
         <svg {...p}>
           <line x1="5" y1="12" x2="19" y2="12" />
           <polyline points="13 6 19 12 13 18" />
+        </svg>
+      );
+    case 'menu':
+      return (
+        <svg {...p}>
+          <line x1="4" y1="7"  x2="20" y2="7"  />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="17" x2="20" y2="17" />
+        </svg>
+      );
+    case 'x':
+      return (
+        <svg {...p}>
+          <line x1="5" y1="5" x2="19" y2="19" />
+          <line x1="19" y1="5" x2="5" y2="19" />
         </svg>
       );
     default: return null;
@@ -165,6 +172,13 @@ const ETHICS = [
   },
 ];
 
+const NAV_LINKS = [
+  ['How it works', '#how-it-works'],
+  ['Overlay Mode', '#overlay-mode'],
+  ['Modes',        '#modes'],
+  ['Privacy',      '#privacy'],
+];
+
 /* ── Scroll animation hook ─────────────────────────────────────── */
 function useScrollReveal() {
   const ref = useRef([]);
@@ -185,33 +199,30 @@ function useScrollReveal() {
   return (i) => el => { ref.current[i] = el; };
 }
 
-/* ── Overlay panel mockup - shows screen-capture session UI ──── */
+/* ── Overlay panel mockup ────────────────────────────────────────── */
 function OverlayMockup() {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden min-h-[280px] flex items-center justify-center p-7"
+      className="relative rounded-2xl overflow-hidden min-h-[260px] flex items-center justify-center p-6 sm:p-7"
       style={{
         background: '#0f172a',
         border: '1px solid rgba(255,255,255,0.06)',
       }}
     >
-      {/* Faint background lines (the underlying app) */}
       <div className="absolute inset-0 p-6 opacity-[0.07] pointer-events-none overflow-hidden">
         {[80, 100, 90, 100, 70, 60, 95, 80, 100].map((w, i) => (
           <div key={i} className="h-2 bg-slate-300 rounded mb-2.5" style={{ width: `${w}%` }} />
         ))}
       </div>
 
-      {/* Floating panel */}
       <div
-        className="relative w-60 rounded-xl overflow-hidden select-none"
+        className="relative w-56 sm:w-60 rounded-xl overflow-hidden select-none"
         style={{
           background: '#111827',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)',
         }}
       >
-        {/* Title bar */}
         <div className="px-3 py-2 flex items-center justify-between" style={{ background: '#0b1220' }}>
           <div className="flex items-center gap-1.5">
             <div className="w-3.5 h-3.5 text-violet-300/80">
@@ -225,21 +236,19 @@ function OverlayMockup() {
           </div>
         </div>
 
-        {/* Body */}
         <div className="p-2.5 space-y-2">
-          <div className="flex items-center justify-between text-[10px] px-0.5">
+          <div className="flex items-center text-[10px] px-0.5">
             <span className="flex items-center gap-1.5 text-slate-500">
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4338ca' }} />
               Calm mode
             </span>
           </div>
 
-          {/* Analyze Screen button */}
           <div
             className="rounded-lg px-2.5 py-2.5 flex items-center gap-2 cursor-pointer"
             style={{ background: '#1a2236', border: '1px solid rgba(99,102,241,0.3)' }}
           >
-            <div className="w-3.5 h-3.5 text-violet-400">
+            <div className="w-3.5 h-3.5 text-violet-400 flex-shrink-0">
               <svg fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width="14" height="14">
                 <rect x="2" y="6" width="20" height="14" rx="2" />
                 <circle cx="12" cy="13" r="3.5" />
@@ -249,7 +258,6 @@ function OverlayMockup() {
             <span className="text-[10px] font-medium text-violet-300">Analyze Screen</span>
           </div>
 
-          {/* Result */}
           <div className="rounded-lg p-2"
             style={{ background: 'rgba(76,222,128,0.06)', border: '1px solid rgba(76,222,128,0.15)' }}>
             <p className="text-[8px] font-semibold uppercase tracking-wider mb-1 text-emerald-400">
@@ -275,20 +283,25 @@ function OverlayMockup() {
 /* ── Navbar ────────────────────────────────────────────────────── */
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 12);
     window.addEventListener('scroll', fn, { passive: true });
     return () => window.removeEventListener('scroll', fn);
   }, []);
 
+  // Close menu when user taps a link
+  function handleLinkClick() { setMobileOpen(false); }
+
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-200 ${
-        scrolled ? 'bg-white/85 backdrop-blur-md border-b border-slate-200/60' : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-        <a href="#" className="flex items-center gap-2">
+    <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-200 ${
+      scrolled || mobileOpen
+        ? 'bg-white/95 backdrop-blur-md border-b border-slate-200/60'
+        : 'bg-transparent'
+    }`}>
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
+        <a href="#" className="flex items-center gap-2" onClick={handleLinkClick}>
           <div className="w-7 h-7 text-indigo-700">
             <ClearPathLogo size={28} />
           </div>
@@ -298,25 +311,73 @@ function Navbar() {
           </span>
         </a>
 
+        {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-7 text-[13px] text-slate-600">
-          <a href="#how-it-works" className="hover:text-slate-900 transition-colors">How it works</a>
-          <a href="#overlay-mode" className="hover:text-slate-900 transition-colors">Overlay Mode</a>
-          <a href="#modes"        className="hover:text-slate-900 transition-colors">Modes</a>
-          <a href="#privacy"      className="hover:text-slate-900 transition-colors">Privacy</a>
+          {NAV_LINKS.map(([label, href]) => (
+            <a key={label} href={href} className="hover:text-slate-900 transition-colors">{label}</a>
+          ))}
         </div>
 
-        <a
-          href={DOWNLOAD_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium px-4 py-2 rounded-md transition-colors"
-        >
-          <Icon name="arrowDown" size={14} />
-          <span className="hidden sm:inline">Download for Windows</span>
-          <span className="sm:hidden">Download</span>
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href={DOWNLOAD_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[13px] font-medium px-4 py-2 rounded-md transition-colors"
+          >
+            <Icon name="arrowDown" size={14} />
+            <span className="hidden sm:inline">Download for Windows</span>
+            <span className="sm:hidden">Download</span>
+          </a>
+
+          {/* Mobile hamburger - hidden on md+ */}
+          <button
+            onClick={() => setMobileOpen(o => !o)}
+            className="md:hidden w-9 h-9 flex items-center justify-center text-slate-700 rounded-md hover:bg-slate-100 transition-colors"
+            aria-label="Toggle menu"
+          >
+            <Icon name={mobileOpen ? 'x' : 'menu'} size={18} />
+          </button>
+        </div>
       </div>
+
+      {/* Mobile dropdown menu */}
+      {mobileOpen && (
+        <div className="mobile-nav-menu md:hidden border-t border-slate-200/70 bg-white/95 backdrop-blur-md">
+          <div className="max-w-6xl mx-auto px-5 py-3 flex flex-col gap-0.5">
+            {NAV_LINKS.map(([label, href]) => (
+              <a
+                key={label}
+                href={href}
+                onClick={handleLinkClick}
+                className="text-[15px] text-slate-700 hover:text-slate-900 font-medium py-2.5 px-1 border-b border-slate-100 last:border-0 transition-colors"
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
+  );
+}
+
+/* ── Section label + heading helper ─────────────────────────────── */
+function SectionHeading({ label, labelColor = 'text-indigo-600', title, body, dark = false }) {
+  return (
+    <>
+      <p className={`text-[11px] font-semibold uppercase tracking-[0.15em] ${labelColor} mb-3`}>
+        {label}
+      </p>
+      <h2 className={`text-[22px] sm:text-[28px] lg:text-[32px] font-semibold leading-[1.15] tracking-tight mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>
+        {title}
+      </h2>
+      {body && (
+        <p className={`text-[15px] leading-relaxed ${dark ? 'text-slate-400' : 'text-slate-600'}`}>
+          {body}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -332,8 +393,8 @@ export default function HomePage() {
     >
       <Navbar />
 
-      {/* ── HERO ──────────────────────────────────────────────── */}
-      <section className="relative pt-28 pb-20 lg:pt-32 lg:pb-24 overflow-hidden">
+      {/* ── HERO ──────────────────────────────────────────── */}
+      <section className="relative pt-24 pb-14 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24 overflow-hidden">
         <div
           className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[500px] pointer-events-none opacity-40"
           style={{
@@ -342,9 +403,9 @@ export default function HomePage() {
           }}
         />
 
-        <div className="relative max-w-6xl mx-auto px-6 grid lg:grid-cols-[1.1fr_1fr] gap-14 items-center">
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-6 grid lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-14 items-center">
           <div>
-            <div className="hero-in-0 inline-flex items-center gap-2 mb-7">
+            <div className="hero-in-0 inline-flex items-center gap-2 mb-6 sm:mb-7">
               <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 tracking-wider uppercase">
                 <span className="w-1 h-1 rounded-full bg-indigo-500" />
                 Powered by ODAI
@@ -355,13 +416,12 @@ export default function HomePage() {
               </span>
             </div>
 
-            <h1 className="hero-in-1 text-4xl lg:text-[2.875rem] font-semibold text-slate-900 leading-[1.12] tracking-tight mb-5">
-              Adaptive support for digital&nbsp;tasks,
-              <br className="hidden sm:inline" />
+            <h1 className="hero-in-1 text-[1.85rem] sm:text-4xl lg:text-[2.875rem] font-semibold text-slate-900 leading-[1.14] tracking-tight mb-4 sm:mb-5">
+              Adaptive support for digital tasks,
               <span className="text-slate-500"> based on how you feel.</span>
             </h1>
 
-            <p className="hero-in-2 text-[15px] text-slate-600 leading-relaxed mb-8 max-w-[28rem]">
+            <p className="hero-in-2 text-[15px] text-slate-600 leading-relaxed mb-7 sm:mb-8 max-w-[28rem]">
               ClearPath floats above any app as a small overlay panel.
               Capture any screen content, paste in text, or type a question,
               and ClearPath simplifies, explains, or guides you through it.
@@ -386,13 +446,13 @@ export default function HomePage() {
               </a>
             </div>
 
-            <p className="hero-in-4 text-[12px] text-slate-400 mt-6">
+            <p className="hero-in-4 text-[12px] text-slate-400 mt-5 sm:mt-6">
               Windows · Free to download · Overlay Mode requires the desktop app
             </p>
           </div>
 
-          {/* Right column: overlay mockup */}
-          <div className="hidden lg:block">
+          {/* Mockup: hidden on small phones, visible on tablets and desktop */}
+          <div className="hidden sm:block lg:block">
             <div className="relative">
               <OverlayMockup />
               <div
@@ -400,35 +460,29 @@ export default function HomePage() {
                 style={{ background: 'radial-gradient(ellipse at center, #0f172a 0%, transparent 70%)' }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-5 text-center font-medium">
+            <p className="text-[11px] text-slate-400 mt-4 sm:mt-5 text-center font-medium">
               Visual preview, not interactive
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── WHAT IT DOES ─────────────────────────────────────── */}
-      <section id="how-it-works" className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-[0.9fr_1.6fr] gap-12 lg:gap-16">
+      {/* ── WHAT IT DOES ─────────────────────────────────── */}
+      <section id="how-it-works" className="py-14 sm:py-20 lg:py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
+          <div className="grid lg:grid-cols-[0.9fr_1.6fr] gap-10 lg:gap-16">
             <div ref={reveal(ri++)} className="reveal-up">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
-                What it does
-              </p>
-              <h2 className="text-[28px] lg:text-[32px] font-semibold text-slate-900 leading-[1.15] tracking-tight mb-4">
-                Digital content,<br />made easier to handle.
-              </h2>
-              <p className="text-[15px] text-slate-600 leading-relaxed">
-                ClearPath helps you simplify, understand, and complete difficult
-                digital tasks: emails, forms, notices, and articles. You choose
-                the support mode that fits you right now.
-              </p>
+              <SectionHeading
+                label="What it does"
+                title={<>Digital content,<br />made easier to handle.</>}
+                body="ClearPath helps you simplify, understand, and complete difficult digital tasks: emails, forms, notices, and articles. You choose the support mode that fits you right now."
+              />
               <p className="text-[13px] text-slate-400 leading-relaxed mt-4">
                 No account. No setup. No clinical language.
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-8">
+            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-7 sm:gap-y-8 mt-8 lg:mt-0">
               {WHAT_IT_DOES.map(({ icon, title, desc }, i) => (
                 <div key={title} ref={reveal(ri++)}
                   className={`reveal-up stagger-${(i % 4) + 1}`}>
@@ -444,25 +498,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── OVERLAY MODE ─────────────────────────────────────── */}
-      <section id="overlay-mode" className="py-24 bg-slate-900 border-y border-slate-800">
-        <div className="max-w-6xl mx-auto px-6">
-          <div ref={reveal(ri++)} className="reveal-up max-w-2xl mb-14">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-400 mb-3">
-              Primary feature · Desktop only
-            </p>
-            <h2 className="text-[28px] lg:text-[32px] font-semibold text-white leading-[1.15] tracking-tight mb-3">
-              Overlay Mode
-            </h2>
-            <p className="text-[15px] text-slate-400 leading-relaxed">
-              A compact 400px panel that floats above every other window on your screen.
-              Start a session, capture anything on your screen with one click, and get
-              instant support in your chosen mode. No uploading. No setup.
-            </p>
+      {/* ── OVERLAY MODE ─────────────────────────────────── */}
+      <section id="overlay-mode" className="py-14 sm:py-20 lg:py-24 bg-slate-900 border-y border-slate-800">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
+          <div ref={reveal(ri++)} className="reveal-up max-w-2xl mb-8 sm:mb-12 lg:mb-14">
+            <SectionHeading
+              dark
+              label="Primary feature · Desktop only"
+              labelColor="text-emerald-400"
+              title="Overlay Mode"
+              body="A compact 400px panel that floats above every other window on your screen. Start a session, capture anything on your screen with one click, and get instant support in your chosen mode. No uploading. No setup."
+            />
           </div>
 
-          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-start">
-            <div ref={reveal(ri++)} className="reveal-left space-y-7">
+          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16 items-start">
+            <div ref={reveal(ri++)} className="reveal-left space-y-6 sm:space-y-7">
               {[
                 {
                   num: '01',
@@ -477,7 +527,7 @@ export default function HomePage() {
                 {
                   num: '03',
                   title: 'Text is read locally, on your device',
-                  desc: 'ClearPath extracts the text from your capture using on-device OCR (Tesseract.js). Nothing is uploaded or sent anywhere. You can also select a specific region of the image to focus on.',
+                  desc: 'ClearPath extracts the text from your capture using on-device OCR. Nothing is uploaded or sent anywhere. You can also crop to a specific region of the image to focus on.',
                 },
                 {
                   num: '04',
@@ -490,9 +540,9 @@ export default function HomePage() {
                   desc: 'Tap End Session and the overlay returns to idle. No background activity, no stored captures, no continuous monitoring.',
                 },
               ].map(({ num, title, desc }) => (
-                <div key={num} className="flex gap-5">
-                  <span className="text-[11px] font-mono text-slate-500 mt-0.5 tabular-nums">{num}</span>
-                  <div className="flex-1 pb-7 border-b border-slate-800 last:border-0 last:pb-0">
+                <div key={num} className="flex gap-4 sm:gap-5">
+                  <span className="text-[11px] font-mono text-slate-500 mt-0.5 tabular-nums flex-shrink-0">{num}</span>
+                  <div className="flex-1 pb-6 sm:pb-7 border-b border-slate-800 last:border-0 last:pb-0">
                     <h3 className="font-semibold text-white mb-1.5 text-[15px]">{title}</h3>
                     <p className="text-[13.5px] text-slate-400 leading-relaxed">{desc}</p>
                   </div>
@@ -514,7 +564,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div ref={reveal(ri++)} className="reveal-right stagger-2 lg:sticky lg:top-24">
+            <div ref={reveal(ri++)} className="reveal-right stagger-2 mt-4 lg:mt-0 lg:sticky lg:top-24">
               <OverlayMockup />
               <p className="text-[11px] text-slate-500 text-center mt-4">
                 Draggable panel, always on top, session-based
@@ -524,25 +574,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── WORKSPACE MODE ─────────────────────────────────── */}
-      <section className="py-24 bg-white">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="max-w-2xl mb-12">
-            <div ref={reveal(ri++)} className="reveal-up">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
-                Secondary mode
-              </p>
-              <h2 className="text-[28px] lg:text-[32px] font-semibold text-slate-900 leading-[1.15] tracking-tight mb-3">
-                Workspace Mode
-              </h2>
-              <p className="text-[15px] text-slate-600 leading-relaxed">
-                A full-screen reading and analysis environment for when you want
-                to go deeper into a document or piece of content.
-              </p>
-            </div>
+      {/* ── WORKSPACE MODE ─────────────────────────────── */}
+      <section className="py-14 sm:py-20 lg:py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
+          <div ref={reveal(ri++)} className="reveal-up max-w-2xl mb-10 sm:mb-12">
+            <SectionHeading
+              label="Secondary mode"
+              title="Workspace Mode"
+              body="A full-screen reading and analysis environment for when you want to go deeper into a document or piece of content."
+            />
           </div>
 
-          <div ref={reveal(ri++)} className="reveal-up grid md:grid-cols-3 gap-x-6 gap-y-8 lg:gap-x-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-x-6 sm:gap-y-8 lg:gap-x-8">
             {[
               {
                 num: '01',
@@ -560,8 +603,8 @@ export default function HomePage() {
                 desc: 'When you need more time and space, the workspace gives you all six adaptive modes, progress tracking, and read-aloud.',
               },
             ].map(({ num, title, desc }, i) => (
-              <div key={num} className={`border-t border-slate-200 pt-5 reveal-up stagger-${i + 1}`}
-                ref={reveal(ri++)}>
+              <div key={num} ref={reveal(ri++)}
+                className={`reveal-up stagger-${i + 1} border-t border-slate-200 pt-5`}>
                 <p className="text-[11px] font-mono text-slate-400 mb-3 tabular-nums">{num}</p>
                 <h3 className="font-semibold text-slate-900 mb-2 text-[15px]">{title}</h3>
                 <p className="text-[13.5px] text-slate-500 leading-relaxed">{desc}</p>
@@ -569,39 +612,32 @@ export default function HomePage() {
             ))}
           </div>
 
-          <p ref={reveal(ri++)} className="reveal-up text-[12px] text-slate-400 mt-10">
+          <p ref={reveal(ri++)} className="reveal-up text-[12px] text-slate-400 mt-8 sm:mt-10">
             Available in the desktop app and the browser.
           </p>
         </div>
       </section>
 
-      {/* ── MODES ────────────────────────────────────────────── */}
-      <section id="modes" className="py-24 bg-slate-50/60 border-y border-slate-200/60">
-        <div className="max-w-6xl mx-auto px-6">
-          <div ref={reveal(ri++)} className="reveal-up max-w-2xl mb-12">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
-              Support modes
-            </p>
-            <h2 className="text-[28px] lg:text-[32px] font-semibold text-slate-900 leading-[1.15] tracking-tight mb-3">
-              You choose your mode.
-            </h2>
-            <p className="text-[15px] text-slate-600 leading-relaxed">
-              Six modes, manually selected. ClearPath never assumes how you feel.
-              You stay in control.
-            </p>
+      {/* ── MODES ──────────────────────────────────────── */}
+      <section id="modes" className="py-14 sm:py-20 lg:py-24 bg-slate-50/60 border-y border-slate-200/60">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
+          <div ref={reveal(ri++)} className="reveal-up max-w-2xl mb-8 sm:mb-12">
+            <SectionHeading
+              label="Support modes"
+              title="You choose your mode."
+              body="Six modes, manually selected. ClearPath never assumes how you feel. You stay in control."
+            />
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {MODES.map((m, i) => (
               <div key={m.name} ref={reveal(ri++)}
                 className={`reveal-scale stagger-${(i % 3) + 1} bg-white rounded-xl p-5 border transition-colors hover:border-slate-300`}
                 style={{ borderColor: '#e2e8f0' }}>
                 <div className="flex items-baseline justify-between mb-2">
                   <div className="flex items-center gap-2.5">
-                    <span
-                      className="w-2 h-2 rounded-full inline-block"
-                      style={{ background: m.accent }}
-                    />
+                    <span className="w-2 h-2 rounded-full inline-block flex-shrink-0"
+                      style={{ background: m.accent }} />
                     <span className="font-semibold text-[15px]" style={{ color: m.accent }}>
                       {m.name}
                     </span>
@@ -618,24 +654,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── PRIVACY / ETHICS ─────────────────────────────── */}
-      <section id="privacy" className="py-24 bg-slate-900">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-[0.9fr_1.6fr] gap-12 lg:gap-16">
+      {/* ── PRIVACY / ETHICS ─────────────────────────── */}
+      <section id="privacy" className="py-14 sm:py-20 lg:py-24 bg-slate-900">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
+          <div className="grid lg:grid-cols-[0.9fr_1.6fr] gap-10 lg:gap-16">
             <div ref={reveal(ri++)} className="reveal-left">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-400 mb-3">
-                Ethics and privacy
-              </p>
-              <h2 className="text-[28px] lg:text-[32px] font-semibold text-white leading-[1.15] tracking-tight mb-3">
-                Designed with care.
-              </h2>
-              <p className="text-[15px] text-slate-400 leading-relaxed">
-                ClearPath was built to support people, not to label, monitor, or
-                exploit them.
-              </p>
+              <SectionHeading
+                dark
+                label="Ethics and privacy"
+                labelColor="text-teal-400"
+                title="Designed with care."
+                body="ClearPath was built to support people, not to label, monitor, or exploit them."
+              />
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-8">
+            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-7 sm:gap-y-8 mt-2 lg:mt-0">
               {ETHICS.map(({ icon, title, desc }, i) => (
                 <div key={title} ref={reveal(ri++)} className={`reveal-up stagger-${(i % 2) + 1}`}>
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center text-teal-300 mb-3"
@@ -651,17 +684,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── DOWNLOAD CTA ─────────────────────────────────── */}
-      <section id="download" className="py-24 bg-white">
-        <div className="max-w-3xl mx-auto px-6">
+      {/* ── DOWNLOAD CTA ─────────────────────────────── */}
+      <section id="download" className="py-16 sm:py-20 lg:py-24 bg-white">
+        <div className="max-w-3xl mx-auto px-5 sm:px-6">
           <div ref={reveal(ri++)} className="reveal-up text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
               Get ClearPath
             </p>
-            <h2 className="text-[28px] lg:text-[32px] font-semibold text-slate-900 leading-[1.15] tracking-tight mb-4">
+            <h2 className="text-[22px] sm:text-[28px] lg:text-[32px] font-semibold text-slate-900 leading-[1.15] tracking-tight mb-4">
               Download the desktop app.
             </h2>
-            <p className="text-[15px] text-slate-600 leading-relaxed mb-8 max-w-lg mx-auto">
+            <p className="text-[15px] text-slate-600 leading-relaxed mb-7 sm:mb-8 max-w-lg mx-auto">
               ClearPath runs as a lightweight floating assistant on Windows.
               Overlay Mode, screen capture, all six support modes, and read-aloud
               are included. Free to download.
@@ -677,8 +710,7 @@ export default function HomePage() {
                 <Icon name="arrowDown" size={14} />
                 Download for Windows
               </a>
-
-              <p className="text-[12px] text-slate-400">
+              <p className="text-[12px] text-slate-400 px-4 text-center">
                 Desktop app required for Overlay Mode · Windows 10 or later · Free
               </p>
             </div>
@@ -686,9 +718,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FOOTER ───────────────────────────────────────── */}
-      <footer className="bg-white border-t border-slate-200/70 py-12">
-        <div className="max-w-6xl mx-auto px-6">
+      {/* ── FOOTER ──────────────────────────────────── */}
+      <footer className="bg-white border-t border-slate-200/70 py-10 sm:py-12">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6">
           <div className="flex flex-col md:flex-row items-start justify-between gap-8 pb-8">
             <div className="max-w-xs">
               <div className="flex items-center gap-2 mb-3">
@@ -703,7 +735,8 @@ export default function HomePage() {
                 No diagnosis. No labels. Just clarity.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-x-14 gap-y-2 text-[13px]">
+
+            <div className="grid grid-cols-2 gap-x-8 sm:gap-x-14 gap-y-2 text-[13px]">
               {[
                 ['How it works', '#how-it-works'],
                 ['Overlay Mode', '#overlay-mode'],
@@ -711,11 +744,14 @@ export default function HomePage() {
                 ['Privacy',      '#privacy'],
                 ['Download',     '#download'],
               ].map(([label, href]) => (
-                <a key={label} href={href} className="text-slate-500 hover:text-slate-900 transition-colors">{label}</a>
+                <a key={label} href={href} className="text-slate-500 hover:text-slate-900 transition-colors">
+                  {label}
+                </a>
               ))}
             </div>
           </div>
-          <div className="pt-6 border-t border-slate-200/70 flex flex-col md:flex-row items-center justify-between gap-3 text-[12px] text-slate-400">
+
+          <div className="pt-6 border-t border-slate-200/70 flex flex-col md:flex-row items-center justify-between gap-3 text-[12px] text-slate-400 text-center md:text-left">
             <span>© {new Date().getFullYear()} ClearPath · Powered by ODAI</span>
             <span>ClearPath does not diagnose, assess, or label users in any way.</span>
           </div>

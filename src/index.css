@@ -210,6 +210,15 @@ body {
   box-shadow: 0 1px 20px rgba(0,0,0,0.06);
 }
 
+/* Mobile nav dropdown */
+@keyframes navDropDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mobile-nav-menu {
+  animation: navDropDown 0.18s cubic-bezier(0.16,1,0.3,1) both;
+}
+
 /* Smooth scroll */
 html { scroll-behavior: smooth; }
 
