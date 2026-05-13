@@ -46,7 +46,7 @@ const SAMPLE_TEXT =
   'You may pay in full or arrange a payment plan at $47 per month for three months. ' +
   'Late payment may incur additional charges. Please review your options at your earliest convenience.';
 
-function processText(text, action) {
+function processText(text, action, options = {}) {
   const raw = text.trim();
   if (!raw) return null;
   const sentences = (raw.match(/[^.!?\n]+[.!?\n]*/g) || [raw])
@@ -89,18 +89,53 @@ function processText(text, action) {
       const urgentRegex = /\b(due|deadline|urgent|important|must|required|need to|asap|immediately|before|by\s+\w+\s+\d+|expires?|overdue)\b/i;
       const actionRegex = /\b(pay|submit|reply|sign|review|choose|select|click|fill|complete|contact|call|visit|update|confirm|verify|return|cancel|schedule|book|register|enrol|accept|decline)\b/i;
 
+      const mode = (options && options.mode) || 'calm';
+
       const mainIdea = sentences[0] || raw.slice(0, 200);
-      const keyPoints = sentences.slice(1, 5).filter(s => s.length > 12);
+      let keyPoints = sentences.slice(1, 5).filter(s => s.length > 12);
       const urgent = sentences.find(s => urgentRegex.test(s));
       const action = sentences.find(s => actionRegex.test(s));
 
+      // Calm "what matters most" / "next step" defaults
+      let mattersMost = urgent || sentences[0] || 'No critical deadlines or urgency detected.';
+      let nextStep    = action || 'Decide whether to act on this now or set it aside for later.';
+
+      // Anxious mode: rephrase any urgency-flavoured words into calm equivalents
+      if (mode === 'anxious') {
+        const calm = (s) =>
+          s.replace(/\burgent(ly)?\b/gi, 'worth noting')
+           .replace(/\bASAP\b/gi, 'when you are ready')
+           .replace(/\bimmediately\b/gi, 'soon')
+           .replace(/\bmust\b/gi, 'can')
+           .replace(/\brequired\b/gi, 'expected')
+           .replace(/\bdeadline\b/gi, 'date');
+        mattersMost = calm(mattersMost);
+        nextStep    = calm(nextStep);
+      }
+
+      // Foggy mode: shorter sentences, bold any action / number / date keyword
+      let renderKeyPoints = keyPoints;
+      if (mode === 'foggy') {
+        renderKeyPoints = keyPoints.map((s) => s.split(/(?<=[\.\!\?])\s+/)[0]).filter(Boolean);
+      }
+
+      // Overwhelmed mode: surface only the single most important point + next step
+      const overwhelmed = mode === 'overwhelmed';
+      // Stressed mode: turn key points into ordered steps as well
+      const stressed = mode === 'stressed';
+
       return {
-        type: 'analyze',
-        heading: '🔍 Screen analysis',
-        mainIdea,
-        keyPoints,
-        mattersMost: urgent || sentences[0] || 'No critical deadlines or urgency detected.',
-        nextStep: action || 'Decide whether to act on this now or set it aside for later.',
+        type:      'analyze',
+        heading:   'Screen analysis',
+        mainIdea:  overwhelmed ? '' : mainIdea,
+        keyPoints: overwhelmed ? [] : renderKeyPoints,
+        mattersMost,
+        nextStep,
+        // Optional: ordered steps for stressed mode
+        steps: stressed
+          ? renderKeyPoints.slice(0, 4).map((s, i) => ({ n: i + 1, text: s }))
+          : null,
+        mode,
       };
     }
     default: return null;
@@ -215,10 +250,10 @@ export default function DesktopApp() {
     setOutput(null);
     stop();
     setTimeout(() => {
-      setOutput(processText(text, action));
+      setOutput(processText(text, action, { mode: overlayMode }));
       setProcessing(false);
     }, 500);
-  }, [inputText, stop]);
+  }, [inputText, stop, overlayMode]);
 
   const handleReadAloud = () => {
     const text = output?.summary || inputText;
@@ -650,20 +685,22 @@ export default function DesktopApp() {
               {output.heading}
             </p>
 
-            {/* Analyze: structured output */}
+            {/* Analyze: mode-aware structured output */}
             {output.type === 'analyze' ? (
               <div className="space-y-3.5">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: cfg.hex.accent }}>
-                    💡 Main idea
-                  </p>
-                  <p className="text-sm leading-relaxed text-slate-200">{output.mainIdea}</p>
-                </div>
+                {output.mainIdea && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: cfg.hex.accent }}>
+                      Main idea
+                    </p>
+                    <p className="text-sm leading-relaxed text-slate-200">{output.mainIdea}</p>
+                  </div>
+                )}
 
-                {output.keyPoints?.length > 0 && (
+                {output.keyPoints?.length > 0 && !output.steps && (
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: cfg.hex.accent }}>
-                      🔑 Key points
+                      Key points
                     </p>
                     <ul className="space-y-1.5">
                       {output.keyPoints.map((p, i) => (
@@ -676,12 +713,31 @@ export default function DesktopApp() {
                   </div>
                 )}
 
+                {output.steps?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: cfg.hex.accent }}>
+                      Steps
+                    </p>
+                    <ol className="space-y-2">
+                      {output.steps.map(({ n, text }) => (
+                        <li key={n} className="flex gap-2.5 text-sm text-slate-300">
+                          <span
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
+                            style={{ background: cfg.hex.accent, color: '#fff' }}
+                          >{n}</span>
+                          <span>{text}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
                 <div
                   className="rounded-xl p-3"
                   style={{ background: cfg.hex.accent + '22', border: `1px solid ${cfg.hex.accent}40` }}
                 >
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: cfg.hex.accent }}>
-                    ⚡ What matters most
+                    What matters most
                   </p>
                   <p className="text-sm leading-relaxed text-slate-100">{output.mattersMost}</p>
                 </div>
@@ -691,10 +747,16 @@ export default function DesktopApp() {
                   style={{ background: 'rgba(255,255,255,0.03)', borderLeftColor: cfg.hex.accent }}
                 >
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: cfg.hex.accent }}>
-                    → Next step
+                    Next step
                   </p>
                   <p className="text-sm leading-relaxed text-slate-200">{output.nextStep}</p>
                 </div>
+
+                {output.mode && output.mode !== 'calm' && (
+                  <p className="text-[10px] text-slate-600 text-center pt-1">
+                    Output adapted for {output.mode} mode
+                  </p>
+                )}
               </div>
             ) : (
               <>
