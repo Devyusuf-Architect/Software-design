@@ -15,7 +15,7 @@ const svgBase = {
 function Icon({ name, size = 18 }) {
   const p = { ...svgBase, width: size, height: size, viewBox: '0 0 24 24' };
   switch (name) {
-    case 'lines':       // simplify
+    case 'lines':
       return (
         <svg {...p}>
           <line x1="4" y1="7"  x2="20" y2="7"  />
@@ -23,7 +23,7 @@ function Icon({ name, size = 18 }) {
           <line x1="4" y1="17" x2="11" y2="17" />
         </svg>
       );
-    case 'list':        // steps
+    case 'list':
       return (
         <svg {...p}>
           <line x1="8" y1="7"  x2="20" y2="7"  />
@@ -34,14 +34,14 @@ function Icon({ name, size = 18 }) {
           <circle cx="4.5" cy="17" r="1" />
         </svg>
       );
-    case 'audio':       // read aloud
+    case 'audio':
       return (
         <svg {...p}>
           <path d="M4 9v6h3l5 4V5L7 9H4z" />
           <path d="M16 8a5 5 0 0 1 0 8" />
         </svg>
       );
-    case 'info':        // define
+    case 'info':
       return (
         <svg {...p}>
           <circle cx="12" cy="12" r="9" />
@@ -49,14 +49,14 @@ function Icon({ name, size = 18 }) {
           <circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none" />
         </svg>
       );
-    case 'lock':        // no diagnosis
+    case 'lock':
       return (
         <svg {...p}>
           <rect x="5" y="11" width="14" height="10" rx="2" />
           <path d="M8 11V7a4 4 0 1 1 8 0v4" />
         </svg>
       );
-    case 'eye':         // no monitoring
+    case 'eye':
       return (
         <svg {...p}>
           <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
@@ -64,19 +64,27 @@ function Icon({ name, size = 18 }) {
           <line x1="4" y1="20" x2="20" y2="4" />
         </svg>
       );
-    case 'check':       // user controls
+    case 'check':
       return (
         <svg {...p}>
           <circle cx="12" cy="12" r="9" />
           <path d="M8 12.5l2.5 2.5L16 9.5" />
         </svg>
       );
-    case 'window':      // user-activated
+    case 'window':
       return (
         <svg {...p}>
           <rect x="3" y="5" width="18" height="14" rx="2" />
           <line x1="3" y1="9" x2="21" y2="9" />
           <circle cx="6.5" cy="7" r="0.4" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'camera':
+      return (
+        <svg {...p}>
+          <rect x="2" y="6" width="20" height="14" rx="2" />
+          <circle cx="12" cy="13" r="3.5" />
+          <path d="M8 6l1.5-2h5L16 6" />
         </svg>
       );
     case 'arrowDown':
@@ -91,13 +99,6 @@ function Icon({ name, size = 18 }) {
         <svg {...p}>
           <line x1="5" y1="12" x2="19" y2="12" />
           <polyline points="13 6 19 12 13 18" />
-        </svg>
-      );
-    case 'refresh':
-      return (
-        <svg {...p}>
-          <polyline points="3 4 3 10 9 10" />
-          <path d="M3.5 10A9 9 0 1 1 12 21" />
         </svg>
       );
     default: return null;
@@ -156,7 +157,7 @@ const ETHICS = [
   },
   {
     icon: 'check', title: 'You control what is shared',
-    desc: 'You paste or type the content you want help with. Nothing is captured without your direct action.',
+    desc: 'Screen capture only happens when you click Analyze Screen. You choose what gets captured, every single time.',
   },
   {
     icon: 'window', title: 'Overlay Mode is user-activated',
@@ -164,19 +165,19 @@ const ETHICS = [
   },
 ];
 
-const MARQUEE_ITEMS = [
-  'Overwhelmed', 'Foggy', 'Anxious', 'Stressed', 'Calm', 'Original',
-  'Simplify', 'Read aloud', 'Step guide', 'Define', 'Overlay Mode', 'Workspace Mode',
-];
-
 /* ── Scroll animation hook ─────────────────────────────────────── */
-function useScrollFade() {
+function useScrollReveal() {
   const ref = useRef([]);
   useEffect(() => {
     const els = ref.current.filter(Boolean);
     const observer = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-      { threshold: 0.12 }
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('revealed');
+          observer.unobserve(e.target);
+        }
+      }),
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
     );
     els.forEach(el => observer.observe(el));
     return () => observer.disconnect();
@@ -184,11 +185,11 @@ function useScrollFade() {
   return (i) => el => { ref.current[i] = el; };
 }
 
-/* ── Overlay panel mockup (static visual) ─────────────────────── */
+/* ── Overlay panel mockup - shows screen-capture session UI ──── */
 function OverlayMockup() {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden min-h-[260px] flex items-center justify-center p-7"
+      className="relative rounded-2xl overflow-hidden min-h-[280px] flex items-center justify-center p-7"
       style={{
         background: '#0f172a',
         border: '1px solid rgba(255,255,255,0.06)',
@@ -217,11 +218,10 @@ function OverlayMockup() {
               <ClearPathLogo size={14} />
             </div>
             <span className="text-white font-medium text-[11px] tracking-wide">ClearPath</span>
-            <span className="text-[9px] font-mono text-slate-500 ml-0.5">overlay</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="text-[9px] text-emerald-400 font-medium">Active</span>
+            <span className="text-[9px] text-emerald-400 font-medium">Session active</span>
           </div>
         </div>
 
@@ -232,21 +232,24 @@ function OverlayMockup() {
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4338ca' }} />
               Calm mode
             </span>
-            <span className="text-slate-600">8 lines</span>
           </div>
 
-          <div className="rounded-lg px-2.5 py-2 text-[10px] leading-relaxed text-slate-300"
-            style={{ background: '#1a2236', border: '1px solid rgba(255,255,255,0.04)' }}>
-            Your outstanding balance of $128.45 is due by May 5.
+          {/* Analyze Screen button */}
+          <div
+            className="rounded-lg px-2.5 py-2.5 flex items-center gap-2 cursor-pointer"
+            style={{ background: '#1a2236', border: '1px solid rgba(99,102,241,0.3)' }}
+          >
+            <div className="w-3.5 h-3.5 text-violet-400">
+              <svg fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width="14" height="14">
+                <rect x="2" y="6" width="20" height="14" rx="2" />
+                <circle cx="12" cy="13" r="3.5" />
+                <path d="M8 6l1.5-2h5L16 6" />
+              </svg>
+            </div>
+            <span className="text-[10px] font-medium text-violet-300">Analyze Screen</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-1">
-            {['Simplify', 'Explain', 'Steps', 'Define'].map(b => (
-              <div key={b} className="text-[9px] font-medium px-1.5 py-1.5 rounded-md text-center"
-                style={{ background: '#1a2236', color: '#cbd5e1' }}>{b}</div>
-            ))}
-          </div>
-
+          {/* Result */}
           <div className="rounded-lg p-2"
             style={{ background: 'rgba(76,222,128,0.06)', border: '1px solid rgba(76,222,128,0.15)' }}>
             <p className="text-[8px] font-semibold uppercase tracking-wider mb-1 text-emerald-400">
@@ -255,6 +258,13 @@ function OverlayMockup() {
             <p className="text-[10px] leading-relaxed text-slate-300">
               A bill is due May 5. You can pay in full, or in three monthly parts.
             </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1">
+            {['Simplify', 'Explain', 'Steps', 'Define'].map(b => (
+              <div key={b} className="text-[9px] font-medium px-1.5 py-1.5 rounded-md text-center"
+                style={{ background: '#1a2236', color: '#cbd5e1' }}>{b}</div>
+            ))}
           </div>
         </div>
       </div>
@@ -312,8 +322,8 @@ function Navbar() {
 
 /* ── HomePage ──────────────────────────────────────────────────── */
 export default function HomePage() {
-  const fade = useScrollFade();
-  let fi = 0;
+  const reveal = useScrollReveal();
+  let ri = 0;
 
   return (
     <div
@@ -352,9 +362,9 @@ export default function HomePage() {
             </h1>
 
             <p className="hero-in-2 text-[15px] text-slate-600 leading-relaxed mb-8 max-w-[28rem]">
-              ClearPath sits on top of any app as a small floating assistant. Paste
-              in confusing content such as an email, a form, or a document, and it
-              simplifies, explains, or guides you through it in the mode you choose.
+              ClearPath floats above any app as a small overlay panel.
+              Capture any screen content, paste in text, or type a question,
+              and ClearPath simplifies, explains, or guides you through it.
             </p>
 
             <div className="hero-in-3 flex flex-wrap items-center gap-3">
@@ -381,7 +391,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Right column: realistic overlay mock */}
+          {/* Right column: overlay mockup */}
           <div className="hidden lg:block">
             <div className="relative">
               <OverlayMockup />
@@ -397,23 +407,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── MARQUEE BAND ─────────────────────────────────────── */}
-      <div className="border-y border-slate-100 bg-slate-50/60 py-3 overflow-hidden">
-        <div className="marquee-track inline-flex whitespace-nowrap">
-          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-            <span key={i} className="inline-flex items-center gap-3 text-slate-400 text-[12px] font-medium tracking-wide mx-5">
-              {item}
-              <span className="text-slate-300">·</span>
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* ── WHAT IT DOES ─────────────────────────────────────── */}
       <section id="how-it-works" className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid lg:grid-cols-[0.9fr_1.6fr] gap-12 lg:gap-16">
-            <div ref={fade(fi++)} className="scroll-fade">
+            <div ref={reveal(ri++)} className="reveal-up">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
                 What it does
               </p>
@@ -423,7 +421,7 @@ export default function HomePage() {
               <p className="text-[15px] text-slate-600 leading-relaxed">
                 ClearPath helps you simplify, understand, and complete difficult
                 digital tasks: emails, forms, notices, and articles. You choose
-                the support mode that fits you.
+                the support mode that fits you right now.
               </p>
               <p className="text-[13px] text-slate-400 leading-relaxed mt-4">
                 No account. No setup. No clinical language.
@@ -432,8 +430,8 @@ export default function HomePage() {
 
             <div className="grid sm:grid-cols-2 gap-x-6 gap-y-8">
               {WHAT_IT_DOES.map(({ icon, title, desc }, i) => (
-                <div key={title} ref={fade(fi++)}
-                  className={`scroll-fade delay-${(i % 2) + 1}`}>
+                <div key={title} ref={reveal(ri++)}
+                  className={`reveal-up stagger-${(i % 4) + 1}`}>
                   <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-600 mb-3 border border-slate-200/70">
                     <Icon name={icon} size={18} />
                   </div>
@@ -449,47 +447,47 @@ export default function HomePage() {
       {/* ── OVERLAY MODE ─────────────────────────────────────── */}
       <section id="overlay-mode" className="py-24 bg-slate-900 border-y border-slate-800">
         <div className="max-w-6xl mx-auto px-6">
-          <div ref={fade(fi++)} className="scroll-fade max-w-2xl mb-14">
+          <div ref={reveal(ri++)} className="reveal-up max-w-2xl mb-14">
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-400 mb-3">
-              Primary feature · Desktop
+              Primary feature · Desktop only
             </p>
             <h2 className="text-[28px] lg:text-[32px] font-semibold text-white leading-[1.15] tracking-tight mb-3">
               Overlay Mode
             </h2>
             <p className="text-[15px] text-slate-400 leading-relaxed">
-              A small floating assistant panel that lives on top of any app or
-              window. You open it when you need it, and it stays out of your way
-              when you do not.
+              A compact 400px panel that floats above every other window on your screen.
+              Start a session, capture anything on your screen with one click, and get
+              instant support in your chosen mode. No uploading. No setup.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-start">
-            <div ref={fade(fi++)} className="scroll-fade space-y-7">
+            <div ref={reveal(ri++)} className="reveal-left space-y-7">
               {[
                 {
                   num: '01',
-                  title: 'Floats above any app',
-                  desc: 'The Overlay panel sits on top of your screen, above your browser, email client, documents, or any other window.',
+                  title: 'Start a session',
+                  desc: 'Tap Start Session and ClearPath becomes active, floating above every other open window. Choose your support mode first.',
                 },
                 {
                   num: '02',
-                  title: 'Paste or type content',
-                  desc: 'Copy any text you find difficult, such as a confusing email, a legal notice, or a complex form, and paste it into the panel.',
+                  title: 'Analyze Screen with one click',
+                  desc: 'Click Analyze Screen. Your operating system opens its own native picker and you select exactly which window, app, or region to capture. Nothing is captured until you confirm.',
                 },
                 {
                   num: '03',
-                  title: 'Simplify, explain, define, guide',
-                  desc: 'Four actions for any content: Simplify (plain English), Explain (in detail), Steps (break into tasks), and Define (look up a word).',
+                  title: 'Text is read locally, on your device',
+                  desc: 'ClearPath extracts the text from your capture using on-device OCR (Tesseract.js). Nothing is uploaded or sent anywhere. You can also select a specific region of the image to focus on.',
                 },
                 {
                   num: '04',
-                  title: 'Read aloud',
-                  desc: 'Any output can be read aloud with adjustable pace. The panel highlights each word as it is spoken.',
+                  title: 'Choose how to process it',
+                  desc: 'Simplify (plain English), Explain (in detail), Steps (break into tasks), or Define (look up a word). The output is shaped by your active mode.',
                 },
                 {
                   num: '05',
-                  title: 'User-controlled, always',
-                  desc: 'Overlay Mode only runs when you launch it. It does not monitor your activity, read your screen, or run in the background.',
+                  title: 'End session when done',
+                  desc: 'Tap End Session and the overlay returns to idle. No background activity, no stored captures, no continuous monitoring.',
                 },
               ].map(({ num, title, desc }) => (
                 <div key={num} className="flex gap-5">
@@ -516,10 +514,10 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div ref={fade(fi++)} className="scroll-fade delay-2 lg:sticky lg:top-24">
+            <div ref={reveal(ri++)} className="reveal-right stagger-2 lg:sticky lg:top-24">
               <OverlayMockup />
               <p className="text-[11px] text-slate-500 text-center mt-4">
-                Draggable, collapsible, always on top
+                Draggable panel, always on top, session-based
               </p>
             </div>
           </div>
@@ -530,7 +528,7 @@ export default function HomePage() {
       <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="max-w-2xl mb-12">
-            <div ref={fade(fi++)} className="scroll-fade">
+            <div ref={reveal(ri++)} className="reveal-up">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
                 Secondary mode
               </p>
@@ -539,17 +537,17 @@ export default function HomePage() {
               </h2>
               <p className="text-[15px] text-slate-600 leading-relaxed">
                 A full-screen reading and analysis environment for when you want
-                to go deeper.
+                to go deeper into a document or piece of content.
               </p>
             </div>
           </div>
 
-          <div ref={fade(fi++)} className="scroll-fade grid md:grid-cols-3 gap-x-6 gap-y-8 lg:gap-x-8">
+          <div ref={reveal(ri++)} className="reveal-up grid md:grid-cols-3 gap-x-6 gap-y-8 lg:gap-x-8">
             {[
               {
                 num: '01',
                 title: 'Upload or paste content',
-                desc: 'Bring in any text such as a document, article, notice, or set of instructions. The workspace formats it cleanly for processing.',
+                desc: 'Bring in any text: a document, article, notice, or set of instructions. The workspace formats it cleanly for processing.',
               },
               {
                 num: '02',
@@ -559,10 +557,11 @@ export default function HomePage() {
               {
                 num: '03',
                 title: 'For deeper reading or analysis',
-                desc: 'When you need more time and space, the workspace gives you all five adaptive modes, progress tracking, and read-aloud.',
+                desc: 'When you need more time and space, the workspace gives you all six adaptive modes, progress tracking, and read-aloud.',
               },
-            ].map(({ num, title, desc }) => (
-              <div key={num} className="border-t border-slate-200 pt-5">
+            ].map(({ num, title, desc }, i) => (
+              <div key={num} className={`border-t border-slate-200 pt-5 reveal-up stagger-${i + 1}`}
+                ref={reveal(ri++)}>
                 <p className="text-[11px] font-mono text-slate-400 mb-3 tabular-nums">{num}</p>
                 <h3 className="font-semibold text-slate-900 mb-2 text-[15px]">{title}</h3>
                 <p className="text-[13.5px] text-slate-500 leading-relaxed">{desc}</p>
@@ -570,7 +569,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <p ref={fade(fi++)} className="scroll-fade text-[12px] text-slate-400 mt-10">
+          <p ref={reveal(ri++)} className="reveal-up text-[12px] text-slate-400 mt-10">
             Available in the desktop app and the browser.
           </p>
         </div>
@@ -579,7 +578,7 @@ export default function HomePage() {
       {/* ── MODES ────────────────────────────────────────────── */}
       <section id="modes" className="py-24 bg-slate-50/60 border-y border-slate-200/60">
         <div className="max-w-6xl mx-auto px-6">
-          <div ref={fade(fi++)} className="scroll-fade max-w-2xl mb-12">
+          <div ref={reveal(ri++)} className="reveal-up max-w-2xl mb-12">
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
               Support modes
             </p>
@@ -594,8 +593,8 @@ export default function HomePage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {MODES.map((m, i) => (
-              <div key={m.name} ref={fade(fi++)}
-                className={`scroll-fade delay-${(i % 3) + 1} bg-white rounded-xl p-5 border transition-colors hover:border-slate-300`}
+              <div key={m.name} ref={reveal(ri++)}
+                className={`reveal-scale stagger-${(i % 3) + 1} bg-white rounded-xl p-5 border transition-colors hover:border-slate-300`}
                 style={{ borderColor: '#e2e8f0' }}>
                 <div className="flex items-baseline justify-between mb-2">
                   <div className="flex items-center gap-2.5">
@@ -623,7 +622,7 @@ export default function HomePage() {
       <section id="privacy" className="py-24 bg-slate-900">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid lg:grid-cols-[0.9fr_1.6fr] gap-12 lg:gap-16">
-            <div ref={fade(fi++)} className="scroll-fade">
+            <div ref={reveal(ri++)} className="reveal-left">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-400 mb-3">
                 Ethics and privacy
               </p>
@@ -638,7 +637,7 @@ export default function HomePage() {
 
             <div className="grid sm:grid-cols-2 gap-x-6 gap-y-8">
               {ETHICS.map(({ icon, title, desc }, i) => (
-                <div key={title} ref={fade(fi++)} className={`scroll-fade delay-${(i % 2) + 1}`}>
+                <div key={title} ref={reveal(ri++)} className={`reveal-up stagger-${(i % 2) + 1}`}>
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center text-teal-300 mb-3"
                     style={{ background: 'rgba(45,212,191,0.08)', border: '1px solid rgba(45,212,191,0.18)' }}>
                     <Icon name={icon} size={18} />
@@ -655,7 +654,7 @@ export default function HomePage() {
       {/* ── DOWNLOAD CTA ─────────────────────────────────── */}
       <section id="download" className="py-24 bg-white">
         <div className="max-w-3xl mx-auto px-6">
-          <div ref={fade(fi++)} className="scroll-fade text-center">
+          <div ref={reveal(ri++)} className="reveal-up text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
               Get ClearPath
             </p>
@@ -664,7 +663,8 @@ export default function HomePage() {
             </h2>
             <p className="text-[15px] text-slate-600 leading-relaxed mb-8 max-w-lg mx-auto">
               ClearPath runs as a lightweight floating assistant on Windows.
-              Overlay Mode, all six support modes, and read-aloud are included.
+              Overlay Mode, screen capture, all six support modes, and read-aloud
+              are included. Free to download.
             </p>
 
             <div className="flex flex-col items-center gap-3">
