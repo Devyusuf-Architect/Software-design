@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import ClearPathLogo from './ClearPathLogo';
+import MiniDemo from './MiniDemo';
 
 const DOWNLOAD_URL =
   'https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe';
@@ -174,6 +175,7 @@ const ETHICS = [
 
 const NAV_LINKS = [
   ['How it works', '#how-it-works'],
+  ['Try it',       '#demo'],
   ['Overlay Mode', '#overlay-mode'],
   ['Modes',        '#modes'],
   ['Privacy',      '#privacy'],
@@ -466,6 +468,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <MiniDemo />
 
       {/* ── WHAT IT DOES ─────────────────────────────────── */}
       <section id="how-it-works" className="py-14 sm:py-20 lg:py-24 bg-white">
