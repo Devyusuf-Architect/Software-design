@@ -3,7 +3,7 @@ import ClearPathLogo from './ClearPathLogo';
 import MiniDemo from './MiniDemo';
 
 const DOWNLOAD_URL =
-  'https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe';
+  'https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.9/ClearPath_1.0.0_x64-setup.exe';
 
 /* ── Minimal line icons ─────────────────────────────────────────── */
 const svgBase = {

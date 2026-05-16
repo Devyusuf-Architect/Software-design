@@ -454,7 +454,7 @@ export default function MiniDemo() {
             <p className="text-center text-[13px] text-slate-500 mt-5 sm:mt-6">
               Use it on any real content - emails, forms, articles, documents.{' '}
               <a
-                href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
+                href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.9/ClearPath_1.0.0_x64-setup.exe"
                 target="_blank"
                 rel="noreferrer"
                 className="text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-2 transition-colors"
