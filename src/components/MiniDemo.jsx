@@ -315,8 +315,9 @@ function OriginalContent() {
 
 /* ── MiniDemo (main export) ─────────────────────────────────────── */
 export default function MiniDemo() {
+  const [open,     setOpen]     = useState(false);
   const [activeId, setActiveId] = useState('calm');
-  const [animKey, setAnimKey]   = useState(0);
+  const [animKey,  setAnimKey]  = useState(0);
   const contentRef = useRef(null);
 
   const active = MODES.find(m => m.id === activeId);
@@ -331,111 +332,140 @@ export default function MiniDemo() {
     <section id="demo" className="py-14 sm:py-20 lg:py-24 bg-white border-b border-slate-200/60">
       <div className="max-w-5xl mx-auto px-5 sm:px-6">
 
-        {/* Header */}
-        <div className="text-center mb-8 sm:mb-10 max-w-2xl mx-auto">
+        {/* Header - always visible */}
+        <div className="text-center max-w-2xl mx-auto">
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-indigo-600 mb-3">
             Live preview
           </p>
           <h2 className="text-[22px] sm:text-[28px] lg:text-[32px] font-semibold text-slate-900 leading-[1.15] tracking-tight mb-3">
             Same content. Six different views.
           </h2>
-          <p className="text-[15px] text-slate-600 leading-relaxed">
-            Pick a mode below and watch this payment notice transform.
+          <p className="text-[15px] text-slate-600 leading-relaxed mb-7">
+            Watch a payment notice transform across all six modes.
             This is exactly how ClearPath works on real content.
           </p>
+
+          {/* Toggle button */}
+          {!open ? (
+            <button
+              onClick={() => setOpen(true)}
+              className="inline-flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[14px] font-medium px-6 py-3 rounded-lg transition-colors shadow-sm shadow-indigo-200"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+                strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              Try the demo
+            </button>
+          ) : (
+            <button
+              onClick={() => setOpen(false)}
+              className="inline-flex items-center gap-2 text-[13px] text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+                strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                <line x1="5" y1="5" x2="19" y2="19" />
+                <line x1="19" y1="5" x2="5" y2="19" />
+              </svg>
+              Close demo
+            </button>
+          )}
         </div>
 
-        {/* Mode picker */}
-        <div className="flex flex-wrap justify-center gap-2 mb-7 sm:mb-8">
-          {MODES.map(m => {
-            const isActive = m.id === activeId;
-            return (
-              <button
-                key={m.id}
-                onClick={() => switchMode(m.id)}
-                className="px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 border"
-                style={{
-                  background:   isActive ? m.color   : m.pill,
-                  color:        isActive ? '#fff'     : m.color,
-                  borderColor:  isActive ? m.color   : 'transparent',
-                  boxShadow:    isActive ? `0 0 0 3px ${m.color}22` : 'none',
-                }}
+        {/* Expandable demo - only rendered when open */}
+        {open && (
+          <div className="mt-8 sm:mt-10 demo-content-enter">
+
+            {/* Mode picker */}
+            <div className="flex flex-wrap justify-center gap-2 mb-7 sm:mb-8">
+              {MODES.map(m => {
+                const isActive = m.id === activeId;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => switchMode(m.id)}
+                    className="px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 border"
+                    style={{
+                      background:  isActive ? m.color : m.pill,
+                      color:       isActive ? '#fff'  : m.color,
+                      borderColor: isActive ? m.color : 'transparent',
+                      boxShadow:   isActive ? `0 0 0 3px ${m.color}22` : 'none',
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Demo card */}
+            <div
+              className="rounded-2xl overflow-hidden border shadow-sm"
+              style={{ borderColor: `${active.color}22` }}
+            >
+              {/* Card header */}
+              <div
+                className="px-4 sm:px-5 py-3 flex items-center gap-2.5 border-b"
+                style={{ background: `${active.color}0d`, borderColor: `${active.color}22` }}
               >
-                {m.label}
-              </button>
-            );
-          })}
-        </div>
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: active.color }} />
+                <span className="font-semibold text-[13px]" style={{ color: active.color }}>
+                  {active.label} mode
+                </span>
+                <span className="text-[12px] text-slate-400 ml-auto hidden sm:inline">
+                  {active.tagline}
+                </span>
+                <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full ml-1 sm:ml-0">
+                  demo
+                </span>
+              </div>
 
-        {/* Demo card */}
-        <div
-          className="rounded-2xl overflow-hidden border shadow-sm"
-          style={{ borderColor: `${active.color}22` }}
-        >
-          {/* Card header */}
-          <div
-            className="px-4 sm:px-5 py-3 flex items-center gap-2.5 border-b"
-            style={{
-              background:   `${active.color}0d`,
-              borderColor:  `${active.color}22`,
-            }}
-          >
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: active.color }} />
-            <span className="font-semibold text-[13px]" style={{ color: active.color }}>
-              {active.label} mode
-            </span>
-            <span className="text-[12px] text-slate-400 ml-auto hidden sm:inline">
-              {active.tagline}
-            </span>
-            {/* "Label" pill showing this is a demo */}
-            <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full ml-1 sm:ml-0">
-              demo
-            </span>
+              {/* Content area */}
+              <div
+                ref={contentRef}
+                key={animKey}
+                className="p-4 sm:p-6 demo-content-enter"
+                style={{ background: active.id === 'original' ? '#f8fafc' : '#fff', minHeight: 220 }}
+              >
+                {activeId === 'calm'        && <CalmContent />}
+                {activeId === 'overwhelmed' && <OverwhelmedContent />}
+                {activeId === 'foggy'       && <FoggyContent />}
+                {activeId === 'anxious'     && <AnxiousContent />}
+                {activeId === 'stressed'    && <StressedContent />}
+                {activeId === 'original'    && <OriginalContent />}
+              </div>
+
+              {/* Card footer */}
+              <div
+                className="px-4 sm:px-5 py-2.5 border-t flex items-center gap-2 text-[11px] text-slate-400"
+                style={{ borderColor: `${active.color}22`, background: `${active.color}06` }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
+                  strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
+                  <circle cx="12" cy="12" r="9" />
+                  <line x1="12" y1="11" x2="12" y2="16" />
+                  <circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none" />
+                </svg>
+                Content is a sample payment notice used for demonstration purposes only.
+              </div>
+            </div>
+
+            {/* CTA under demo */}
+            <p className="text-center text-[13px] text-slate-500 mt-5 sm:mt-6">
+              Use it on any real content - emails, forms, articles, documents.{' '}
+              <a
+                href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
+                target="_blank"
+                rel="noreferrer"
+                className="text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-2 transition-colors"
+              >
+                Download the app
+              </a>{' '}
+              to run it on your own screen.
+            </p>
+
           </div>
-
-          {/* Content area - animated on mode change */}
-          <div
-            ref={contentRef}
-            key={animKey}
-            className="p-4 sm:p-6 demo-content-enter"
-            style={{ background: active.id === 'original' ? '#f8fafc' : '#fff', minHeight: 220 }}
-          >
-            {activeId === 'calm'        && <CalmContent />}
-            {activeId === 'overwhelmed' && <OverwhelmedContent />}
-            {activeId === 'foggy'       && <FoggyContent />}
-            {activeId === 'anxious'     && <AnxiousContent />}
-            {activeId === 'stressed'    && <StressedContent />}
-            {activeId === 'original'    && <OriginalContent />}
-          </div>
-
-          {/* Card footer */}
-          <div
-            className="px-4 sm:px-5 py-2.5 border-t flex items-center gap-2 text-[11px] text-slate-400"
-            style={{ borderColor: `${active.color}22`, background: `${active.color}06` }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"
-              strokeLinecap="round" strokeLinejoin="round" width="12" height="12">
-              <circle cx="12" cy="12" r="9" />
-              <line x1="12" y1="11" x2="12" y2="16" />
-              <circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none" />
-            </svg>
-            Content is a sample payment notice used for demonstration purposes only.
-          </div>
-        </div>
-
-        {/* CTA under demo */}
-        <p className="text-center text-[13px] text-slate-500 mt-5 sm:mt-6">
-          Use it on any real content - emails, forms, articles, documents.{' '}
-          <a
-            href="https://github.com/Devyusuf-Architect/Software-design/releases/download/v1.0.5/ClearPath_1.0.0_x64-setup.exe"
-            target="_blank"
-            rel="noreferrer"
-            className="text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-2 transition-colors"
-          >
-            Download the app
-          </a>{' '}
-          to run it on your own screen.
-        </p>
+        )}
 
       </div>
     </section>
