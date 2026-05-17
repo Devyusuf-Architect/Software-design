@@ -43,14 +43,20 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
       await new Promise(r => setTimeout(r, 300));
     } catch {}
 
+    const restoreWindow = async () => {
+      if (!win) return;
+      await win.show().catch(() => {});
+      await win.center().catch(() => {});
+    };
+
     try {
       const shot = await captureScreen();
-      if (win) await win.show().catch(() => {});
+      await restoreWindow();
       setRawShot(shot);
       if (mode === 'area') { setStep('cropping'); return; }
       await runAi(shot.dataUrl);
     } catch (err) {
-      if (win) await win.show().catch(() => {});
+      await restoreWindow();
       const msg = err?.message || '';
       if (/cancel/i.test(msg)) { setStep('chooser'); return; }
       setError(msg || 'Screen capture failed.');

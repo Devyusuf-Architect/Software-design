@@ -131,11 +131,28 @@ export default function DesktopApp() {
     (await tauriWindow())?.setAlwaysOnTop(val);
   };
 
+  const resetPosition = () => {
+    tauriWindow().then(win => win?.center().catch(() => {})).catch(() => {});
+  };
+
+  /* ── Escape key: close analyze dialog ────────────────────────── */
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape' && showAnalyzeDialog) setShowAnalyzeDialog(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [showAnalyzeDialog]);
+
   /* ── Session management ───────────────────────────────────────── */
   const startSession = () => {
     setAppView('session');
     setAlwaysOnTop(true);
-    tauriWindow().then(win => win?.setAlwaysOnTop(true).catch(() => {})).catch(() => {});
+    tauriWindow().then(async win => {
+      if (!win) return;
+      await win.setAlwaysOnTop(true).catch(() => {});
+      await win.center().catch(() => {});
+    }).catch(() => {});
   };
 
   const endSession = () => {
@@ -150,7 +167,11 @@ export default function DesktopApp() {
     setDiagnoseText('');
     setDiagnoseResults(null);
     setDiagnoseSuggested(null);
-    tauriWindow().then(win => win?.setAlwaysOnTop(false).catch(() => {})).catch(() => {});
+    tauriWindow().then(async win => {
+      if (!win) return;
+      await win.setAlwaysOnTop(false).catch(() => {});
+      await win.center().catch(() => {});
+    }).catch(() => {});
   };
 
   const toggleCollapse = () => {
@@ -589,17 +610,23 @@ export default function DesktopApp() {
 
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
         style={{ background: '#0B1120', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button onClick={() => handleAlwaysOnTop(!alwaysOnTop)}
-          className="flex items-center gap-1.5 text-[11px] transition-colors"
-          style={{ color: alwaysOnTop ? '#4ADE80' : '#475569' }}>
-          <span>📌</span>
-          <span>Pin on top</span>
-          <div className="w-7 h-4 rounded-full transition-colors flex items-center px-0.5 ml-1"
-            style={{ background: alwaysOnTop ? '#4ADE80' : '#1E293B' }}>
-            <div className="w-3 h-3 rounded-full bg-white transition-transform"
-              style={{ transform: alwaysOnTop ? 'translateX(12px)' : 'translateX(0)' }} />
-          </div>
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => handleAlwaysOnTop(!alwaysOnTop)}
+            className="flex items-center gap-1.5 text-[11px] transition-colors"
+            style={{ color: alwaysOnTop ? '#4ADE80' : '#475569' }}>
+            <span>📌</span>
+            <div className="w-7 h-4 rounded-full transition-colors flex items-center px-0.5"
+              style={{ background: alwaysOnTop ? '#4ADE80' : '#1E293B' }}>
+              <div className="w-3 h-3 rounded-full bg-white transition-transform"
+                style={{ transform: alwaysOnTop ? 'translateX(12px)' : 'translateX(0)' }} />
+            </div>
+          </button>
+          <button onClick={resetPosition}
+            className="text-[10px] text-slate-700 hover:text-slate-400 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+            title="Move window back to centre of screen">
+            ↺ Reset position
+          </button>
+        </div>
         <button onClick={endSession}
           className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors"
           style={{ background: 'rgba(239,68,68,0.12)', color: '#F87171', border: '1px solid rgba(239,68,68,0.2)' }}
