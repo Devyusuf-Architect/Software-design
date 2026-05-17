@@ -48,30 +48,14 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
   const startCapture = async (mode) => {
     setError(null);
     setStep('capturing');
-
-    // Hide this window so it doesn't appear in the captured image
-    let win = null;
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      win = getCurrentWindow();
-      await win.hide();
-      await new Promise(r => setTimeout(r, 300));
-    } catch {}
-
-    const restoreWindow = async () => {
-      if (!win) return;
-      await win.show().catch(() => {});
-      await win.center().catch(() => {});
-    };
-
+    // No window hiding — the OS picker lets users choose which
+    // window/screen to capture, so ClearPath being visible is fine.
     try {
       const shot = await captureScreen();
-      await restoreWindow();
       setRawShot(shot);
       if (mode === 'area') { setStep('cropping'); return; }
       await runAi(shot.dataUrl);
     } catch (err) {
-      await restoreWindow();
       const msg = err?.message || '';
       if (/cancel/i.test(msg)) { setStep('chooser'); return; }
       setError(msg || 'Screen capture failed.');

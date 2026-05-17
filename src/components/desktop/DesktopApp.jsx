@@ -157,12 +157,8 @@ export default function DesktopApp() {
   /* ── Session management ───────────────────────────────────────── */
   const startSession = () => {
     setAppView('session');
-    setAlwaysOnTop(true);
-    tauriWindow().then(async win => {
-      if (!win) return;
-      await win.setAlwaysOnTop(true).catch(() => {});
-      await win.center().catch(() => {});
-    }).catch(() => {});
+    // No Tauri window calls — session is a pure React view change.
+    // setAlwaysOnTop is user-controlled via the footer toggle only.
   };
 
   const endSession = () => {
@@ -177,11 +173,7 @@ export default function DesktopApp() {
     setDiagnoseText('');
     setDiagnoseResults(null);
     setDiagnoseSuggested(null);
-    tauriWindow().then(async win => {
-      if (!win) return;
-      await win.setAlwaysOnTop(false).catch(() => {});
-      await win.center().catch(() => {});
-    }).catch(() => {});
+    tauriWindow().then(win => win?.setAlwaysOnTop(false).catch(() => {})).catch(() => {});
   };
 
   /* ── Collapse / expand ────────────────────────────────────────── */
