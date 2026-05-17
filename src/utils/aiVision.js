@@ -92,6 +92,6 @@ export async function analyzeScreenshot(dataUrl, apiKey) {
 
 const KEY_STORAGE = 'clearpath_claude_key';
 
-export const getApiKey   = ()    => localStorage.getItem(KEY_STORAGE) || '';
-export const saveApiKey  = (key) => localStorage.setItem(KEY_STORAGE, key.trim());
+export const getApiKey   = ()    => (localStorage.getItem(KEY_STORAGE) || '').replace(/\s+/g, '');
+export const saveApiKey  = (key) => localStorage.setItem(KEY_STORAGE, key.replace(/\s+/g, ''));
 export const clearApiKey = ()    => localStorage.removeItem(KEY_STORAGE);
