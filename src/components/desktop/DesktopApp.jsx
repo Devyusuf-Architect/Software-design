@@ -202,9 +202,9 @@ export default function DesktopApp() {
   };
 
   /* ── Diagnose Mode ────────────────────────────────────────────── */
-  const openDiagnose = async (text) => {
-    const results   = analyzeAllModes(text);
-    const suggested = suggestMode(text);
+  const openDiagnose = async (text, prebuiltResults, suggestedModeOverride) => {
+    const results   = prebuiltResults || analyzeAllModes(text);
+    const suggested = suggestedModeOverride || suggestMode(text);
     setDiagnoseText(text);
     setDiagnoseResults(results);
     setDiagnoseSuggested(suggested);
@@ -261,9 +261,42 @@ export default function DesktopApp() {
   };
 
   /* ── Analyze Screen ───────────────────────────────────────────── */
-  const handleAnalyzeConfirm = (text) => {
+  const handleAnalyzeConfirm = (aiResult) => {
     setShowAnalyzeDialog(false);
-    openDiagnose(text);
+
+    // aiResult is the structured AI response: { context, cleanText, mainIdea,
+    // mattersMost, nextStep, keyPoints, intent }
+    const text = aiResult?.cleanText || (typeof aiResult === 'string' ? aiResult : '');
+    if (!text) return;
+
+    // Build all-mode results from the AI's clean text
+    const results = analyzeAllModes(text);
+
+    // Enhance calm mode with AI's directly computed fields (higher quality)
+    if (aiResult && typeof aiResult === 'object') {
+      results.calm = {
+        ...results.calm,
+        mainIdea:    aiResult.mainIdea    || results.calm.mainIdea,
+        mattersMost: aiResult.mattersMost || results.calm.mattersMost,
+        nextStep:    aiResult.nextStep    || results.calm.nextStep,
+        keyPoints:   aiResult.keyPoints?.length ? aiResult.keyPoints : results.calm.keyPoints,
+      };
+    }
+
+    // Suggest mode based on AI's context field
+    const contextModeMap = {
+      payment:      'calm',
+      error:        'foggy',
+      form:         'stressed',
+      instructions: 'stressed',
+      urgent:       'anxious',
+      general:      'calm',
+      article:      'foggy',
+    };
+    const suggested = (aiResult?.context && contextModeMap[aiResult.context])
+      || suggestMode(text);
+
+    openDiagnose(text, results, suggested);
   };
 
   /* ── Style helpers ────────────────────────────────────────────── */
