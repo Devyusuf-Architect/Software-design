@@ -750,7 +750,6 @@ export default function HomePage() {
                 ['Overlay Mode', '#overlay-mode'],
                 ['Modes',        '#modes'],
                 ['Privacy',      '#privacy'],
-                ['Download',     '#download'],
               ].map(([label, href]) => (
                 <a key={label} href={href} className="text-slate-500 hover:text-slate-900 transition-colors">
                   {label}
