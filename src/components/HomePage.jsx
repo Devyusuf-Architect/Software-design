@@ -562,7 +562,8 @@ export default function HomePage() {
                   <Icon name="arrowDown" size={14} />
                   Download for Windows
                 </a>
-                <p className="text-[12px] text-slate-500 mt-3">
+                <p className="text-[11px] text-slate-500 mt-1.5">Version v1.1.0</p>
+                <p className="text-[12px] text-slate-500 mt-2">
                   Overlay Mode is available in the desktop app only.
                 </p>
               </div>
@@ -705,15 +706,18 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col items-center gap-3">
-              <a
-                href={DOWNLOAD_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-6 py-3 rounded-md transition-colors"
-              >
-                <Icon name="arrowDown" size={14} />
-                Download for Windows
-              </a>
+              <div className="flex flex-col items-center gap-1">
+                <a
+                  href={DOWNLOAD_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium px-6 py-3 rounded-md transition-colors"
+                >
+                  <Icon name="arrowDown" size={14} />
+                  Download for Windows
+                </a>
+                <p className="text-[11px] text-slate-400">Version v1.1.0</p>
+              </div>
               <p className="text-[12px] text-slate-400 px-4 text-center">
                 Desktop app required for Overlay Mode · Windows 10 or later · Free
               </p>
