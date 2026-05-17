@@ -9,7 +9,6 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    name: Build – Windows
 
     steps:
       - name: Checkout

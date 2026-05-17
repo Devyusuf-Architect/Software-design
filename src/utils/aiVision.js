@@ -18,7 +18,6 @@ Return ONLY valid JSON — no markdown, no explanation, just the JSON object:
   "cleanText": "the relevant readable text extracted from the main content area only"
 }`;
 
-/* Resize image to max 1568px long side (Claude vision optimal) */
 async function compressImage(dataUrl) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -36,7 +35,6 @@ async function compressImage(dataUrl) {
   });
 }
 
-/* Built-in key bundled at build time — users never need their own */
 const BUILT_IN_KEY = import.meta.env.VITE_ANTHROPIC_KEY || '';
 
 export async function analyzeScreenshot(dataUrl, apiKey) {
@@ -92,7 +90,6 @@ export async function analyzeScreenshot(dataUrl, apiKey) {
   }
 }
 
-/* ── API key persistence ──────────────────────────────────────────── */
 const KEY_STORAGE = 'clearpath_claude_key';
 
 export const getApiKey   = ()    => localStorage.getItem(KEY_STORAGE) || '';
