@@ -47,46 +47,41 @@ export async function analyzeScreenshot(dataUrl, apiKey) {
   const base64     = compressed.replace(/^data:image\/\w+;base64,/, '');
   const mediaType  = compressed.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
 
-  let response;
-  try {
-    response = await fetch(CLAUDE_API, {
-      method: 'POST',
-      headers: {
-        'x-api-key':          key,
-        'anthropic-version':  '2023-06-01',
-        'content-type':       'application/json',
-      },
-    body: JSON.stringify({
-      model:      MODEL,
-      max_tokens: 1024,
-      system:     SYSTEM_PROMPT,
-      messages: [{
-        role:    'user',
-        content: [
-          {
-            type:   'image',
-            source: { type: 'base64', media_type: mediaType, data: base64 },
-          },
-          {
-            type: 'text',
-            text: 'Analyze this screenshot and return the JSON response.',
-          },
-        ],
-      }],
-      }),
-    });
-  } catch (networkErr) {
-    throw new Error(`Network error — check your internet connection. (${networkErr.message})`);
+  const payload = JSON.stringify({
+    model:      MODEL,
+    max_tokens: 1024,
+    system:     SYSTEM_PROMPT,
+    messages: [{
+      role:    'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+        { type: 'text', text: 'Analyze this screenshot and return the JSON response.' },
+      ],
+    }],
+  });
+
+  const { status, body } = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', CLAUDE_API);
+    xhr.setRequestHeader('x-api-key',         key);
+    xhr.setRequestHeader('anthropic-version', '2023-06-01');
+    xhr.setRequestHeader('content-type',      'application/json');
+    xhr.timeout   = 30000;
+    xhr.onload    = () => resolve({ status: xhr.status, body: xhr.responseText });
+    xhr.onerror   = () => reject(new Error('Network error — check your internet connection.'));
+    xhr.ontimeout = () => reject(new Error('Request timed out — please try again.'));
+    xhr.send(payload);
+  });
+
+  if (status === 401) throw new Error('INVALID_API_KEY');
+  if (status === 429) throw new Error('RATE_LIMITED');
+  if (status < 200 || status >= 300) {
+    let msg = `API error ${status}`;
+    try { msg = JSON.parse(body).error?.message || msg; } catch {}
+    throw new Error(msg);
   }
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    if (response.status === 401) throw new Error('INVALID_API_KEY');
-    if (response.status === 429) throw new Error('RATE_LIMITED');
-    throw new Error(err.error?.message || `API error ${response.status}`);
-  }
-
-  const data = await response.json();
+  const data = JSON.parse(body);
   const text = data.content?.[0]?.text || '';
 
   try {

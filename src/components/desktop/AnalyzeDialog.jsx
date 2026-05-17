@@ -48,12 +48,24 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
   const startCapture = async (mode) => {
     setError(null);
     setStep('capturing');
+
+    // Hide this window so it doesn't appear in the captured image
+    let win = null;
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      win = getCurrentWindow();
+      await win.hide();
+      await new Promise(r => setTimeout(r, 300));
+    } catch {}
+
     try {
       const shot = await captureScreen();
+      if (win) await win.show().catch(() => {});
       setRawShot(shot);
       if (mode === 'area') { setStep('cropping'); return; }
       await runAi(shot.dataUrl);
     } catch (err) {
+      if (win) await win.show().catch(() => {});
       const msg = err?.message || '';
       if (/cancel/i.test(msg)) { setStep('chooser'); return; }
       setError(msg || 'Screen capture failed.');
@@ -334,123 +346,106 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
 
 /* ── Crop step ──────────────────────────────────────────────────────── */
 function CropStep({ shot, onUseFull, onSelect }) {
-  const wrapRef = useRef(null);
-  const [drag,  setDrag]  = useState(null);
+  const containerRef = useRef(null);
+  const dragStart    = useRef(null);
+  const [sel, setSel] = useState(null);
 
-  const onPointerDown = (e) => {
-    if (!wrapRef.current) return;
-    const r = wrapRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-    const y = Math.max(0, Math.min(1, (e.clientY - r.top)  / r.height));
-    setDrag({ x0: x, y0: y, x1: x, y1: y });
-    wrapRef.current.setPointerCapture?.(e.pointerId);
-  };
-  const onPointerMove = (e) => {
-    if (!drag || !wrapRef.current) return;
-    const r = wrapRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-    const y = Math.max(0, Math.min(1, (e.clientY - r.top)  / r.height));
-    setDrag(d => ({ ...d, x1: x, y1: y }));
+  const getPos = (e) => {
+    const r = containerRef.current.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
+      y: Math.max(0, Math.min(1, (e.clientY - r.top)  / r.height)),
+    };
   };
 
-  const rect = drag && {
-    x: Math.min(drag.x0, drag.x1),
-    y: Math.min(drag.y0, drag.y1),
-    w: Math.abs(drag.x1 - drag.x0),
-    h: Math.abs(drag.y1 - drag.y0),
+  const onMouseDown = (e) => {
+    e.preventDefault();
+    const p = getPos(e);
+    dragStart.current = p;
+    setSel({ x: p.x, y: p.y, w: 0, h: 0 });
   };
-  const hasSel = rect && rect.w > 0.04 && rect.h > 0.04;
 
-  const corners = hasSel ? [
-    { left: `${rect.x * 100}%`,              top: `${rect.y * 100}%`,                        tx: '0',    ty: '0'    },
-    { left: `${(rect.x + rect.w) * 100}%`,   top: `${rect.y * 100}%`,                        tx: '-100%', ty: '0'   },
-    { left: `${rect.x * 100}%`,              top: `${(rect.y + rect.h) * 100}%`,             tx: '0',    ty: '-100%'},
-    { left: `${(rect.x + rect.w) * 100}%`,   top: `${(rect.y + rect.h) * 100}%`,            tx: '-100%', ty: '-100%'},
-  ] : [];
+  const onMouseMove = (e) => {
+    if (!dragStart.current) return;
+    const p = getPos(e);
+    setSel({
+      x: Math.min(dragStart.current.x, p.x),
+      y: Math.min(dragStart.current.y, p.y),
+      w: Math.abs(p.x - dragStart.current.x),
+      h: Math.abs(p.y - dragStart.current.y),
+    });
+  };
+
+  const onMouseUp = () => { dragStart.current = null; };
+
+  const hasSel = sel && sel.w > 0.03 && sel.h > 0.03;
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <span className="text-slate-400">✂️</span>
-        <p className="text-[11px] text-slate-400">
-          {hasSel ? 'Selection ready. Click Analyze Selected Area.' : 'Drag on the screenshot to select content.'}
-        </p>
-      </div>
+      <p className="text-[11px] text-slate-400 px-1">
+        {hasSel ? 'Selection ready — click Analyze Area.' : 'Drag on the image to select a region, or analyze the full screen.'}
+      </p>
 
-      <div ref={wrapRef}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        className="relative w-full rounded-xl overflow-hidden border touch-none select-none"
+      <div
+        ref={containerRef}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        className="relative w-full rounded-xl overflow-hidden select-none"
         style={{
-          borderColor: hasSel ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)',
           aspectRatio: shot ? `${shot.width} / ${shot.height}` : '16/9',
-          background: '#000', cursor: 'crosshair', minHeight: 140,
-        }}>
-        {shot && <img src={shot.dataUrl} alt="" draggable={false}
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none" />}
-
-        {hasSel && (
-          <>
-            <div className="absolute inset-0 pointer-events-none"
-              style={{
-                background: 'rgba(0,0,0,0.55)',
-                clipPath: `polygon(0 0,100% 0,100% 100%,0 100%,0 0,
-                  ${rect.x*100}% ${rect.y*100}%,
-                  ${rect.x*100}% ${(rect.y+rect.h)*100}%,
-                  ${(rect.x+rect.w)*100}% ${(rect.y+rect.h)*100}%,
-                  ${(rect.x+rect.w)*100}% ${rect.y*100}%,
-                  ${rect.x*100}% ${rect.y*100}%)`,
-              }} />
-            <div className="absolute pointer-events-none"
-              style={{
-                left: `${rect.x*100}%`, top: `${rect.y*100}%`,
-                width: `${rect.w*100}%`, height: `${rect.h*100}%`,
-                border: '2px solid #6366F1',
-                boxShadow: '0 0 0 1px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(99,102,241,0.3)',
-              }} />
-            {corners.map((c, i) => (
-              <div key={i} className="absolute pointer-events-none w-3 h-3 rounded-sm"
-                style={{
-                  left: c.left, top: c.top,
-                  transform: `translate(${c.tx},${c.ty})`,
-                  background: '#6366F1', boxShadow: '0 0 4px rgba(99,102,241,0.8)',
-                }} />
-            ))}
-          </>
+          maxHeight: '190px',
+          background: '#000',
+          cursor: 'crosshair',
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        {shot && (
+          <img src={shot.dataUrl} alt="" draggable={false}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
         )}
 
-        {!hasSel && !drag && (
+        {!hasSel && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="flex flex-col items-center gap-2 opacity-25">
-              <span className="text-3xl text-white">⊹</span>
-              <span className="text-[10px] text-white font-medium tracking-widest uppercase">Drag to select</span>
-            </div>
+            <span className="text-[10px] text-white/20 font-medium uppercase tracking-widest">Drag to select</span>
           </div>
         )}
+
+        {hasSel && (
+          <div className="absolute pointer-events-none" style={{
+            left:      `${sel.x * 100}%`,
+            top:       `${sel.y * 100}%`,
+            width:     `${sel.w * 100}%`,
+            height:    `${sel.h * 100}%`,
+            border:    '2px solid #6366F1',
+            background: 'rgba(99,102,241,0.12)',
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
+          }} />
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex gap-2">
         {hasSel && (
-          <button onClick={() => setDrag(null)}
-            className="py-2.5 px-3.5 rounded-xl text-sm font-semibold flex-shrink-0 transition-colors"
+          <button onClick={() => { setSel(null); dragStart.current = null; }}
+            className="py-2.5 px-3 rounded-xl text-sm font-semibold flex-shrink-0"
             style={{ background: '#1E293B', color: '#64748B', border: '1px solid rgba(255,255,255,0.06)' }}>
             Reset
           </button>
         )}
         <button onClick={onUseFull}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
           style={{ background: '#1E293B', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}>
-          Use Full Screen
+          Full Screen
         </button>
-        <button onClick={() => onSelect(rect)} disabled={!hasSel}
-          className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        <button onClick={() => onSelect(sel)} disabled={!hasSel}
+          className="flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
           style={{
-            background:  hasSel ? '#6366F1' : '#1E293B',
-            color:       '#fff',
-            boxShadow:   hasSel ? '0 4px 16px rgba(99,102,241,0.4)' : 'none',
+            background: hasSel ? '#6366F1' : '#1E293B',
+            color: '#fff',
+            boxShadow: hasSel ? '0 4px 16px rgba(99,102,241,0.35)' : 'none',
           }}>
-          Analyze Selected Area
+          Analyze Area
         </button>
       </div>
     </div>
