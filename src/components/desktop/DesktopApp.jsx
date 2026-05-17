@@ -145,23 +145,29 @@ export default function DesktopApp() {
   /* ── Session management ───────────────────────────────────────── */
   const startSession = async () => {
     setTransitioning(true);
-    const win = await tauriWindow();
-    if (win) {
-      await win.setAlwaysOnTop(true);
-      await resizeTo(W_OVERLAY, H_OVERLAY);
+    try {
+      const win = await tauriWindow();
+      if (win) {
+        await win.setAlwaysOnTop(true).catch(() => {});
+        await resizeTo(W_OVERLAY, H_OVERLAY);
+      }
+      setAlwaysOnTop(true);
+      setTimeout(() => { setAppView('session'); setTransitioning(false); }, 150);
+    } catch {
+      setTransitioning(false);
     }
-    setAlwaysOnTop(true);
-    setTimeout(() => { setAppView('session'); setTransitioning(false); }, 150);
   };
 
   const endSession = async () => {
     setTransitioning(true);
     stop();
-    const win = await tauriWindow();
-    if (win) {
-      await win.setAlwaysOnTop(false);
-      await resizeTo(W_OVERLAY, H_OVERLAY);
-    }
+    try {
+      const win = await tauriWindow();
+      if (win) {
+        await win.setAlwaysOnTop(false).catch(() => {});
+        await resizeTo(W_OVERLAY, H_OVERLAY);
+      }
+    } catch {}
     setTimeout(() => {
       setAppView('idle');
       setCollapsed(false);
@@ -181,23 +187,27 @@ export default function DesktopApp() {
   const toggleCollapse = async () => {
     const next = !collapsed;
     setCollapsed(next);
-    await resizeTo(W_OVERLAY, next ? H_COLLAPSED : H_OVERLAY);
+    await resizeTo(W_OVERLAY, next ? H_COLLAPSED : H_OVERLAY).catch(() => {});
   };
 
   /* ── Workspace ────────────────────────────────────────────────── */
   const openWorkspace = async () => {
     setTransitioning(true);
-    await resizeTo(W_WORKSPACE, H_WORKSPACE);
-    const win = await tauriWindow();
-    if (win) await win.center();
+    try {
+      await resizeTo(W_WORKSPACE, H_WORKSPACE);
+      const win = await tauriWindow();
+      if (win) await win.center().catch(() => {});
+    } catch {}
     setTimeout(() => { setAppView('workspace'); setTransitioning(false); }, 200);
   };
 
   const closeWorkspace = async () => {
     setTransitioning(true);
-    await resizeTo(W_OVERLAY, H_OVERLAY);
-    const win = await tauriWindow();
-    if (win) await win.center();
+    try {
+      await resizeTo(W_OVERLAY, H_OVERLAY);
+      const win = await tauriWindow();
+      if (win) await win.center().catch(() => {});
+    } catch {}
     setTimeout(() => { setAppView('session'); setTransitioning(false); }, 200);
   };
 
@@ -209,21 +219,25 @@ export default function DesktopApp() {
     setDiagnoseResults(results);
     setDiagnoseSuggested(suggested);
     setTransitioning(true);
-    const win = await tauriWindow();
-    if (win) {
-      await resizeTo(W_DIAGNOSE, H_DIAGNOSE);
-      await win.center();
-    }
+    try {
+      const win = await tauriWindow();
+      if (win) {
+        await resizeTo(W_DIAGNOSE, H_DIAGNOSE);
+        await win.center().catch(() => {});
+      }
+    } catch {}
     setTimeout(() => { setAppView('diagnose'); setTransitioning(false); }, 150);
   };
 
   const closeDiagnose = async () => {
     setTransitioning(true);
-    const win = await tauriWindow();
-    if (win) {
-      await resizeTo(W_OVERLAY, H_OVERLAY);
-      await win.center();
-    }
+    try {
+      const win = await tauriWindow();
+      if (win) {
+        await resizeTo(W_OVERLAY, H_OVERLAY);
+        await win.center().catch(() => {});
+      }
+    } catch {}
     setTimeout(() => {
       setAppView('session');
       setDiagnoseText('');
