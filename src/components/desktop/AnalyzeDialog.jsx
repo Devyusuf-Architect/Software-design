@@ -267,7 +267,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
           <p className="font-semibold text-red-300 text-sm mb-1">Something went wrong</p>
           <p className="text-[12px] text-slate-400 leading-relaxed">{error}</p>
         </div>
-        <button onClick={() => setStep(getApiKey() ? 'chooser' : 'apikey')}
+        <button onClick={() => setStep((HAS_BUILT_IN_KEY || getApiKey()) ? 'chooser' : 'apikey')}
           className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
           style={{ background: cfg.hex.accent, color: '#fff' }}>
           Try again

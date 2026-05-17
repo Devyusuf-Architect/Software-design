@@ -47,14 +47,15 @@ export async function analyzeScreenshot(dataUrl, apiKey) {
   const base64     = compressed.replace(/^data:image\/\w+;base64,/, '');
   const mediaType  = compressed.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
 
-  const response = await fetch(CLAUDE_API, {
-    method: 'POST',
-    headers: {
-      'x-api-key':                               key,
-      'anthropic-version':                       '2023-06-01',
-      'content-type':                            'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+  let response;
+  try {
+    response = await fetch(CLAUDE_API, {
+      method: 'POST',
+      headers: {
+        'x-api-key':          key,
+        'anthropic-version':  '2023-06-01',
+        'content-type':       'application/json',
+      },
     body: JSON.stringify({
       model:      MODEL,
       max_tokens: 1024,
@@ -72,8 +73,11 @@ export async function analyzeScreenshot(dataUrl, apiKey) {
           },
         ],
       }],
-    }),
-  });
+      }),
+    });
+  } catch (networkErr) {
+    throw new Error(`Network error — check your internet connection. (${networkErr.message})`);
+  }
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
