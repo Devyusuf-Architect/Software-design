@@ -34,6 +34,8 @@ jobs:
 
       - name: Build Tauri app
         run: npm run tauri:build
+        env:
+          VITE_ANTHROPIC_KEY: ${{ secrets.VITE_ANTHROPIC_KEY }}
 
       - name: Upload Windows installers
         uses: actions/upload-artifact@v4

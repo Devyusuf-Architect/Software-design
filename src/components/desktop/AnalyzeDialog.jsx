@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { captureScreen, cropDataUrl } from '../../utils/screenCapture';
 import { analyzeScreenshot, getApiKey, saveApiKey, clearApiKey } from '../../utils/aiVision';
 
+const HAS_BUILT_IN_KEY = !!(import.meta.env.VITE_ANTHROPIC_KEY);
+
 /*
  * Flow:
  *   apikey     → no key stored; user enters their Claude API key
@@ -18,7 +20,8 @@ import { analyzeScreenshot, getApiKey, saveApiKey, clearApiKey } from '../../uti
 export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
   const storedKey = getApiKey();
 
-  const [step,      setStep]      = useState(storedKey ? 'chooser' : 'apikey');
+  // Skip API key setup if app was built with a bundled key
+  const [step,      setStep]      = useState((HAS_BUILT_IN_KEY || storedKey) ? 'chooser' : 'apikey');
   const [apiKeyVal, setApiKeyVal] = useState('');
   const [keyError,  setKeyError]  = useState('');
   const [error,     setError]     = useState(null);
@@ -194,12 +197,14 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
             </p>
           </div>
 
-          <button
-            onClick={() => { clearApiKey(); setApiKeyVal(''); setStep('apikey'); }}
-            className="text-[10px] text-slate-700 hover:text-slate-500 transition-colors w-full text-center pt-1"
-          >
-            Change API key
-          </button>
+          {!HAS_BUILT_IN_KEY && (
+            <button
+              onClick={() => { clearApiKey(); setApiKeyVal(''); setStep('apikey'); }}
+              className="text-[10px] text-slate-700 hover:text-slate-500 transition-colors w-full text-center pt-1"
+            >
+              Change API key
+            </button>
+          )}
         </div>
       );
     }

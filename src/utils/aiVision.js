@@ -36,8 +36,12 @@ async function compressImage(dataUrl) {
   });
 }
 
+/* Built-in key bundled at build time — users never need their own */
+const BUILT_IN_KEY = import.meta.env.VITE_ANTHROPIC_KEY || '';
+
 export async function analyzeScreenshot(dataUrl, apiKey) {
-  if (!apiKey) throw new Error('NO_API_KEY');
+  const key = BUILT_IN_KEY || apiKey;
+  if (!key) throw new Error('NO_API_KEY');
 
   const compressed = await compressImage(dataUrl);
   const base64     = compressed.replace(/^data:image\/\w+;base64,/, '');
@@ -46,7 +50,7 @@ export async function analyzeScreenshot(dataUrl, apiKey) {
   const response = await fetch(CLAUDE_API, {
     method: 'POST',
     headers: {
-      'x-api-key':                               apiKey,
+      'x-api-key':                               key,
       'anthropic-version':                       '2023-06-01',
       'content-type':                            'application/json',
       'anthropic-dangerous-direct-browser-access': 'true',
