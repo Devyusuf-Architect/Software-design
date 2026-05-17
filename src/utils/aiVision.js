@@ -61,9 +61,10 @@ export async function analyzeScreenshot(dataUrl, apiKey) {
   const { status, body } = await new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', CLAUDE_API);
-    xhr.setRequestHeader('x-api-key',         key);
-    xhr.setRequestHeader('anthropic-version', '2023-06-01');
-    xhr.setRequestHeader('content-type',      'application/json');
+    xhr.setRequestHeader('x-api-key',                              key);
+    xhr.setRequestHeader('anthropic-version',                      '2023-06-01');
+    xhr.setRequestHeader('anthropic-dangerous-direct-browser-access', 'true');
+    xhr.setRequestHeader('content-type',                           'application/json');
     xhr.timeout   = 30000;
     xhr.onload    = () => resolve({ status: xhr.status, body: xhr.responseText });
     xhr.onerror   = () => reject(new Error('Network error — check your internet connection.'));
