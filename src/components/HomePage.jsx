@@ -716,7 +716,7 @@ export default function HomePage() {
                   <Icon name="arrowDown" size={14} />
                   Download for Windows
                 </a>
-                <p className="text-[11px] text-slate-400">Version v1.1.0</p>
+                <p className="text-[11px] text-slate-400">Version v1.2.1</p>
               </div>
               <p className="text-[12px] text-slate-400 px-4 text-center">
                 Desktop app required for Overlay Mode · Windows 10 or later · Free
@@ -759,9 +759,26 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-slate-200/70 flex flex-col md:flex-row items-center justify-between gap-3 text-[12px] text-slate-400 text-center md:text-left">
-            <span>© {new Date().getFullYear()} ClearPath · Powered by ODAI</span>
-            <span>ClearPath does not diagnose, assess, or label users in any way.</span>
+          <div className="pt-6 border-t border-slate-200/70">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3 mb-4 text-[12px] text-slate-400 text-center md:text-left">
+              <span>© {new Date().getFullYear()} ClearPath · Powered by ODAI</span>
+              <span>ClearPath does not diagnose, assess, or label users in any way.</span>
+            </div>
+            <div className="pt-4 border-t border-slate-200/70 text-center md:text-left">
+              <details className="inline-block">
+                <summary className="text-[12px] text-slate-400 hover:text-slate-600 cursor-pointer transition-colors">
+                  Created by
+                </summary>
+                <div className="mt-2 text-[12px] text-slate-500 space-y-1">
+                  <p className="font-semibold text-slate-600">Lead:</p>
+                  <p>Yusuf Siddiqui</p>
+                  <p className="font-semibold text-slate-600 mt-2">Team:</p>
+                  <p>Leena Yarkhan</p>
+                  <p>Mikhail Siddiqui</p>
+                  <p>Jude Salem</p>
+                </div>
+              </details>
+            </div>
           </div>
         </div>
       </footer>
