@@ -579,7 +579,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg, sampleText = '
             className="flex-[2] py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ background: cfg.hex.accent, color: '#fff' }}
           >
-            Analyze pasted text
+            Enter Diagnose Mode →
           </button>
         )}
 
@@ -590,7 +590,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg, sampleText = '
             className="flex-[2] py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             style={{ background: cfg.hex.accent, color: '#fff' }}
           >
-            Analyze captured text
+            Enter Diagnose Mode →
           </button>
         )}
 
@@ -615,64 +615,80 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg, sampleText = '
 /* ─────────────────────────────────────────────────────────── */
 function CropStep({ shot, onUseFull, onSelect }) {
   const wrapRef = useRef(null);
-  const [drag, setDrag] = useState(null); // { x0, y0, x1, y1 } in % of wrap
-  const [bounds, setBounds] = useState(null); // { w, h } of wrap
-
-  useEffect(() => {
-    if (!wrapRef.current) return;
-    const r = wrapRef.current.getBoundingClientRect();
-    setBounds({ w: r.width, h: r.height });
-  }, [shot]);
+  const [drag,   setDrag]   = useState(null);
 
   const onPointerDown = (e) => {
     if (!wrapRef.current) return;
     const rect = wrapRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top)  / rect.height;
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - rect.top)  / rect.height));
     setDrag({ x0: x, y0: y, x1: x, y1: y });
     wrapRef.current.setPointerCapture?.(e.pointerId);
   };
   const onPointerMove = (e) => {
     if (!drag || !wrapRef.current) return;
     const rect = wrapRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top)  / rect.height;
-    setDrag((d) => ({ ...d, x1: x, y1: y }));
-  };
-  const onPointerUp = () => {
-    // commit happens via onConfirm click
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - rect.top)  / rect.height));
+    setDrag(d => ({ ...d, x1: x, y1: y }));
   };
 
   const rectNorm = drag && {
-    x: Math.min(Math.max(0, Math.min(drag.x0, drag.x1)), 1),
-    y: Math.min(Math.max(0, Math.min(drag.y0, drag.y1)), 1),
-    w: Math.min(1, Math.abs(drag.x1 - drag.x0)),
-    h: Math.min(1, Math.abs(drag.y1 - drag.y0)),
+    x: Math.min(drag.x0, drag.x1),
+    y: Math.min(drag.y0, drag.y1),
+    w: Math.abs(drag.x1 - drag.x0),
+    h: Math.abs(drag.y1 - drag.y0),
   };
-  const hasSelection = rectNorm && rectNorm.w > 0.02 && rectNorm.h > 0.02;
+  const hasSelection = rectNorm && rectNorm.w > 0.04 && rectNorm.h > 0.04;
+
+  /* Corner handle positions */
+  const corners = hasSelection ? [
+    { left: `${rectNorm.x * 100}%`,               top: `${rectNorm.y * 100}%`,                           tl: true },
+    { left: `${(rectNorm.x + rectNorm.w) * 100}%`, top: `${rectNorm.y * 100}%`,                           tr: true },
+    { left: `${rectNorm.x * 100}%`,               top: `${(rectNorm.y + rectNorm.h) * 100}%`,             bl: true },
+    { left: `${(rectNorm.x + rectNorm.w) * 100}%`, top: `${(rectNorm.y + rectNorm.h) * 100}%`,            br: true },
+  ] : [];
 
   return (
     <div className="space-y-3">
+      {/* Instructions */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <span className="text-slate-400 text-base">✂️</span>
+        <p className="text-[11px] text-slate-400 leading-snug">
+          {hasSelection
+            ? 'Selection ready. Adjust or click Analyze Selected Area.'
+            : 'Drag on the screenshot to select the content you want analyzed.'}
+        </p>
+      </div>
+
+      {/* Screenshot canvas */}
       <div
         ref={wrapRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
         className="relative w-full rounded-xl overflow-hidden border touch-none select-none"
         style={{
-          borderColor: 'rgba(255,255,255,0.08)',
+          borderColor: hasSelection ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)',
           aspectRatio: shot ? `${shot.width} / ${shot.height}` : '16/9',
-          background: '#000',
-          cursor: 'crosshair',
+          background:  '#000',
+          cursor:      'crosshair',
+          minHeight:   140,
+          boxShadow:   hasSelection ? '0 0 0 1px rgba(99,102,241,0.3)' : 'none',
+          transition:  'border-color 0.2s, box-shadow 0.2s',
         }}
       >
-        {shot && <img src={shot.dataUrl} alt="" draggable={false} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />}
+        {shot && (
+          <img src={shot.dataUrl} alt="" draggable={false}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+        )}
+
         {hasSelection && (
           <>
-            {/* Dimmed overlay outside selection */}
+            {/* Dim outside selection */}
             <div className="absolute inset-0 pointer-events-none"
               style={{
-                background: 'rgba(0,0,0,0.5)',
+                background: 'rgba(0,0,0,0.55)',
                 clipPath: `polygon(
                   0 0, 100% 0, 100% 100%, 0 100%, 0 0,
                   ${rectNorm.x * 100}% ${rectNorm.y * 100}%,
@@ -681,42 +697,63 @@ function CropStep({ shot, onUseFull, onSelect }) {
                   ${(rectNorm.x + rectNorm.w) * 100}% ${rectNorm.y * 100}%,
                   ${rectNorm.x * 100}% ${rectNorm.y * 100}%
                 )`,
-              }}
-            />
-            {/* Selection outline */}
+              }} />
+
+            {/* Selection border */}
             <div className="absolute pointer-events-none"
               style={{
-                left:   `${rectNorm.x * 100}%`,
-                top:    `${rectNorm.y * 100}%`,
-                width:  `${rectNorm.w * 100}%`,
-                height: `${rectNorm.h * 100}%`,
-                border: '2px solid #fff',
-                boxShadow: '0 0 0 1px rgba(0,0,0,0.5)',
-              }}
-            />
+                left:      `${rectNorm.x * 100}%`,
+                top:       `${rectNorm.y * 100}%`,
+                width:     `${rectNorm.w * 100}%`,
+                height:    `${rectNorm.h * 100}%`,
+                border:    '2px solid #6366F1',
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(99,102,241,0.3)',
+              }} />
+
+            {/* Corner handles */}
+            {corners.map((c, i) => (
+              <div key={i} className="absolute pointer-events-none w-3 h-3 rounded-sm"
+                style={{
+                  left:       c.left,
+                  top:        c.top,
+                  transform:  `translate(${c.tr || c.br ? '-100%' : '0'}, ${c.bl || c.br ? '-100%' : '0'})`,
+                  background: '#6366F1',
+                  boxShadow:  '0 0 4px rgba(99,102,241,0.8)',
+                }} />
+            ))}
           </>
+        )}
+
+        {/* Crosshair hint when no selection */}
+        {!hasSelection && !drag && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="flex flex-col items-center gap-2 opacity-30">
+              <span className="text-3xl">⊹</span>
+              <span className="text-[10px] text-white font-medium tracking-widest uppercase">Drag to select</span>
+            </div>
+          </div>
         )}
       </div>
 
-      <p className="text-[11px] text-slate-500 text-center">
-        Drag on the image to select the area you want analyzed.
-      </p>
-
+      {/* Action buttons */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={onUseFull}
+        {hasSelection && (
+          <button onClick={() => setDrag(null)}
+            className="py-2.5 px-3.5 rounded-xl text-sm font-semibold transition-colors flex-shrink-0"
+            style={{ background: '#1E293B', color: '#64748B', border: '1px solid rgba(255,255,255,0.06)' }}>
+            Reset
+          </button>
+        )}
+        <button onClick={onUseFull}
           className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-          style={{ background: '#1E293B', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          Use full screen
+          style={{ background: '#1E293B', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}>
+          Use Full Screen
         </button>
-        <button
-          onClick={() => onSelect(rectNorm)}
-          disabled={!hasSelection}
-          className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{ background: '#fff', color: '#0f172a' }}
-        >
-          Analyze area
+        <button onClick={() => onSelect(rectNorm)} disabled={!hasSelection}
+          className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ background: hasSelection ? '#6366F1' : '#1E293B', color: '#fff',
+                   boxShadow: hasSelection ? '0 4px 16px rgba(99,102,241,0.4)' : 'none' }}>
+          Analyze Selected Area
         </button>
       </div>
     </div>
