@@ -4,9 +4,23 @@ import { analyzeScreenshot, getApiKey, saveApiKey, clearApiKey } from '../../uti
 
 const HAS_BUILT_IN_KEY = !!(import.meta.env.VITE_ANTHROPIC_KEY);
 
+/*
+ * Flow:
+ *   apikey     → no key stored; user enters their Claude API key
+ *   chooser    → pick "Full screen" or "Select area"
+ *   capturing  → OS picker open
+ *   cropping   → drag region on captured image
+ *   analyzing  → AI vision call in progress
+ *   error      → something failed
+ *
+ * On success: onConfirm(aiResult) where aiResult = { context, mainIdea,
+ *   mattersMost, nextStep, keyPoints, cleanText, intent }
+ */
+
 export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
   const storedKey = getApiKey();
 
+  // Skip API key setup if app was built with a bundled key
   const [step,      setStep]      = useState((HAS_BUILT_IN_KEY || storedKey) ? 'chooser' : 'apikey');
   const [apiKeyVal, setApiKeyVal] = useState('');
   const [keyError,  setKeyError]  = useState('');
@@ -35,6 +49,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
     setError(null);
     setStep('capturing');
 
+    // Hide this window so it doesn't appear in the captured image
     let win = null;
     try {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
@@ -100,9 +115,12 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
     }
   };
 
+  /* ── Render body ──────────────────────────────────────────────── */
   const busy = step === 'capturing' || step === 'analyzing';
 
   const body = (() => {
+
+    /* ── API key entry ─────────────────────────────────────────── */
     if (step === 'apikey') {
       return (
         <div className="space-y-4">
@@ -114,6 +132,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
               device only — it is never sent to our servers.
             </p>
           </div>
+
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">
               Your Claude API key
@@ -130,6 +149,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
             />
             {keyError && <p className="text-[11px] text-red-400 mt-1">{keyError}</p>}
           </div>
+
           <div className="rounded-lg p-3 flex items-start gap-2"
             style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)' }}>
             <span className="text-emerald-400 flex-shrink-0 mt-0.5">🔒</span>
@@ -142,6 +162,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
       );
     }
 
+    /* ── Chooser ───────────────────────────────────────────────── */
     if (step === 'chooser') {
       return (
         <div className="space-y-4">
@@ -162,6 +183,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
                 <p className="text-[11px] opacity-80 leading-snug mt-0.5">Capture entire screen</p>
               </div>
             </button>
+
             <button
               onClick={() => startCapture('area')}
               disabled={!captureSupported}
@@ -177,12 +199,14 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
               </div>
             </button>
           </div>
+
           {!captureSupported && (
             <div className="rounded-lg p-3 text-[11px] text-amber-300"
               style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)' }}>
               Screen capture not supported in this build.
             </div>
           )}
+
           <div className="rounded-lg p-3 flex items-start gap-2"
             style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)' }}>
             <span className="text-emerald-400 flex-shrink-0 mt-0.5"><SquareIcon name="lock" size={12} /></span>
@@ -190,6 +214,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
               Your OS shows a picker. ClearPath only captures when you click — nothing runs in the background.
             </p>
           </div>
+
           {!HAS_BUILT_IN_KEY && (
             <button
               onClick={() => { clearApiKey(); setApiKeyVal(''); setStep('apikey'); }}
@@ -202,6 +227,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
       );
     }
 
+    /* ── Waiting for OS picker ─────────────────────────────────── */
     if (step === 'capturing') {
       return (
         <div className="flex flex-col items-center justify-center py-10 gap-5">
@@ -219,6 +245,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
       );
     }
 
+    /* ── Crop region ───────────────────────────────────────────── */
     if (step === 'cropping') {
       return (
         <CropStep
@@ -229,6 +256,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
       );
     }
 
+    /* ── AI analyzing ──────────────────────────────────────────── */
     if (step === 'analyzing') {
       return (
         <div className="flex flex-col items-center justify-center py-10 gap-5">
@@ -249,6 +277,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
       );
     }
 
+    /* ── Error ─────────────────────────────────────────────────── */
     return (
       <div className="space-y-4">
         <div className="rounded-xl p-4"
@@ -265,6 +294,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
     );
   })();
 
+  /* ── Header label ─────────────────────────────────────────────── */
   const headerLabel = {
     apikey:    { title: 'Set up AI',          sub: 'One-time setup to enable AI analysis' },
     chooser:   { title: 'Analyze Screen',     sub: 'AI will read your screen'              },
@@ -276,6 +306,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
 
   return (
     <div className="absolute inset-0 z-50 flex flex-col" style={{ background: '#0B1120' }}>
+      {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-5 py-3.5"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div>
@@ -287,10 +318,14 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
           <SquareIcon name="x" size={12} />
         </button>
       </div>
+
+      {/* Body */}
       <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0 space-y-4"
         style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
         {body}
       </div>
+
+      {/* Footer */}
       <div className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5"
         style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <button onClick={onCancel} disabled={busy}
@@ -298,6 +333,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
           style={{ background: '#1E293B', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.08)' }}>
           Cancel
         </button>
+
         {step === 'apikey' && (
           <button onClick={handleSaveKey}
             className="flex-[2] py-2.5 rounded-xl text-sm font-bold transition-colors"
@@ -305,6 +341,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
             Save &amp; Continue
           </button>
         )}
+
         {(busy || step === 'error' || step === 'cropping') && (
           <div className="flex-[2]" />
         )}
@@ -313,6 +350,7 @@ export default function AnalyzeDialog({ onConfirm, onCancel, cfg }) {
   );
 }
 
+/* ── Crop step ──────────────────────────────────────────────────────── */
 function CropStep({ shot, onUseFull, onSelect }) {
   const containerRef = useRef(null);
   const dragStart    = useRef(null);
@@ -345,6 +383,7 @@ function CropStep({ shot, onUseFull, onSelect }) {
   };
 
   const onMouseUp = () => { dragStart.current = null; };
+
   const hasSel = sel && sel.w > 0.03 && sel.h > 0.03;
 
   return (
@@ -352,6 +391,7 @@ function CropStep({ shot, onUseFull, onSelect }) {
       <p className="text-[11px] text-slate-400 px-1">
         {hasSel ? 'Selection ready — click Analyze Area.' : 'Drag on the image to select a region, or analyze the full screen.'}
       </p>
+
       <div
         ref={containerRef}
         onMouseDown={onMouseDown}
@@ -371,11 +411,13 @@ function CropStep({ shot, onUseFull, onSelect }) {
           <img src={shot.dataUrl} alt="" draggable={false}
             className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
         )}
+
         {!hasSel && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className="text-[10px] text-white/20 font-medium uppercase tracking-widest">Drag to select</span>
           </div>
         )}
+
         {hasSel && (
           <div className="absolute pointer-events-none" style={{
             left:      `${sel.x * 100}%`,
@@ -388,6 +430,7 @@ function CropStep({ shot, onUseFull, onSelect }) {
           }} />
         )}
       </div>
+
       <div className="flex gap-2">
         {hasSel && (
           <button onClick={() => { setSel(null); dragStart.current = null; }}
@@ -415,6 +458,7 @@ function CropStep({ shot, onUseFull, onSelect }) {
   );
 }
 
+/* ── Icons ──────────────────────────────────────────────────────────── */
 function SquareIcon({ name, size = 14 }) {
   const b = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' };
   switch (name) {

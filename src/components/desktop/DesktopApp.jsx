@@ -33,8 +33,10 @@ const H_WORKSPACE = 840;
 const W_DIAGNOSE  = 560;
 const H_DIAGNOSE  = 700;
 
+/* ── Modes ───────────────────────────────────────────────────────────── */
 const ALL_MODES = ['calm', 'overwhelmed', 'foggy', 'anxious', 'stressed', 'original'];
 
+/* ── Action definitions ──────────────────────────────────────────────── */
 const ACTIONS = [
   { id: 'simplify', icon: '✨', label: 'Simplify'   },
   { id: 'explain',  icon: '💡', label: 'Explain'    },
@@ -47,6 +49,7 @@ const SAMPLE_TEXT =
   'You may pay in full or arrange a payment plan at $47 per month for three months. ' +
   'Late payment may incur additional charges. Please review your options at your earliest convenience.';
 
+/* ── Non-analyze text processing (manual input actions) ──────────────── */
 function processText(text, action, options = {}) {
   const raw       = text.trim();
   if (!raw) return null;
@@ -93,10 +96,15 @@ function processText(text, action, options = {}) {
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   MAIN DESKTOP APP
+   ════════════════════════════════════════════════════════════════════════ */
 export default function DesktopApp() {
+  /* ── App state ────────────────────────────────────────────────── */
   const [appView,   setAppView]   = useState('idle');
   const [collapsed, setCollapsed] = useState(false);
 
+  /* ── Overlay content ──────────────────────────────────────────── */
   const [overlayMode,       setOverlayMode]       = useState('calm');
   const [inputText,         setInputText]         = useState('');
   const [output,            setOutput]            = useState(null);
@@ -106,9 +114,10 @@ export default function DesktopApp() {
   const [showAnalyzeDialog, setShowAnalyzeDialog] = useState(false);
   const [alwaysOnTop,       setAlwaysOnTop]       = useState(false);
 
-  const [diagnoseText,      setDiagnoseText]      = useState('');
-  const [diagnoseResults,   setDiagnoseResults]   = useState(null);
-  const [diagnoseSuggested, setDiagnoseSuggested] = useState(null);
+  /* ── Diagnose state ───────────────────────────────────────────── */
+  const [diagnoseText,     setDiagnoseText]     = useState('');
+  const [diagnoseResults,  setDiagnoseResults]  = useState(null);
+  const [diagnoseSuggested,setDiagnoseSuggested]= useState(null);
 
   const cfg        = modeConfigs[overlayMode] || modeConfigs.calm;
   const { speak, stop, isSpeaking, isSupported: speechSupported } = useSpeech();
@@ -123,6 +132,7 @@ export default function DesktopApp() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  /* ── Window controls ──────────────────────────────────────────── */
   const handleMinimize = async () => { (await tauriWindow())?.minimize(); };
   const handleClose    = async () => { (await tauriWindow())?.close(); };
 
@@ -174,12 +184,14 @@ export default function DesktopApp() {
     }).catch(() => {});
   };
 
+  /* ── Collapse / expand ────────────────────────────────────────── */
   const toggleCollapse = () => {
     const next = !collapsed;
     setCollapsed(next);
     resizeTo(W_OVERLAY, next ? H_COLLAPSED : H_OVERLAY).catch(() => {});
   };
 
+  /* ── Workspace ────────────────────────────────────────────────── */
   const openWorkspace = () => {
     setAppView('workspace');
     resizeTo(W_WORKSPACE, H_WORKSPACE)
@@ -194,6 +206,7 @@ export default function DesktopApp() {
       .catch(() => {});
   };
 
+  /* ── Diagnose Mode ────────────────────────────────────────────── */
   const openDiagnose = (text, prebuiltResults, suggestedModeOverride) => {
     const results   = prebuiltResults || analyzeAllModes(text);
     const suggested = suggestedModeOverride || suggestMode(text);
@@ -216,6 +229,7 @@ export default function DesktopApp() {
       .catch(() => {});
   };
 
+  /* ── Manual text actions ──────────────────────────────────────── */
   const runAction = useCallback((action, textOverride) => {
     const text = textOverride ?? inputText;
     if (!text.trim()) return;
@@ -242,11 +256,19 @@ export default function DesktopApp() {
     setOutput(null);
   };
 
+  /* ── Analyze Screen ───────────────────────────────────────────── */
   const handleAnalyzeConfirm = (aiResult) => {
     setShowAnalyzeDialog(false);
+
+    // aiResult is the structured AI response: { context, cleanText, mainIdea,
+    // mattersMost, nextStep, keyPoints, intent }
     const text = aiResult?.cleanText || (typeof aiResult === 'string' ? aiResult : '');
     if (!text) return;
+
+    // Build all-mode results from the AI's clean text
     const results = analyzeAllModes(text);
+
+    // Enhance calm mode with AI's directly computed fields (higher quality)
     if (aiResult && typeof aiResult === 'object') {
       results.calm = {
         ...results.calm,
@@ -256,17 +278,30 @@ export default function DesktopApp() {
         keyPoints:   aiResult.keyPoints?.length ? aiResult.keyPoints : results.calm.keyPoints,
       };
     }
+
+    // Suggest mode based on AI's context field
     const contextModeMap = {
-      payment: 'calm', error: 'foggy', form: 'stressed',
-      instructions: 'stressed', urgent: 'anxious', general: 'calm', article: 'foggy',
+      payment:      'calm',
+      error:        'foggy',
+      form:         'stressed',
+      instructions: 'stressed',
+      urgent:       'anxious',
+      general:      'calm',
+      article:      'foggy',
     };
-    const suggested = (aiResult?.context && contextModeMap[aiResult.context]) || suggestMode(text);
+    const suggested = (aiResult?.context && contextModeMap[aiResult.context])
+      || suggestMode(text);
+
     openDiagnose(text, results, suggested);
   };
 
+  /* ── Style helpers ────────────────────────────────────────────── */
   const btnPrimary   = { background: cfg.hex.accent, color: '#fff' };
   const btnSecondary = { background: '#1E293B', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' };
 
+  /* ════════════════════════════════════════════════════════════════
+     DIAGNOSE VIEW
+     ════════════════════════════════════════════════════════════════ */
   if (appView === 'diagnose') {
     return (
       <div>
@@ -285,10 +320,14 @@ export default function DesktopApp() {
     );
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     WORKSPACE VIEW
+     ════════════════════════════════════════════════════════════════ */
   if (appView === 'workspace') {
     return (
       <div className="flex flex-col" style={{ height: '100vh', background: '#0F172A' }}>
-        <div data-tauri-drag-region
+        <div
+          data-tauri-drag-region
           className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
           style={{ background: '#0F172A', borderBottom: '1px solid rgba(255,255,255,0.06)', userSelect: 'none' }}
         >
@@ -314,6 +353,9 @@ export default function DesktopApp() {
     );
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     COLLAPSED BAR
+     ════════════════════════════════════════════════════════════════ */
   if (appView === 'session' && collapsed) {
     return (
       <div data-tauri-drag-region
@@ -340,6 +382,9 @@ export default function DesktopApp() {
     );
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     IDLE VIEW
+     ════════════════════════════════════════════════════════════════ */
   if (appView === 'idle') {
     return (
       <div className="flex flex-col" style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9' }}>
@@ -358,6 +403,7 @@ export default function DesktopApp() {
               className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-red-500/80 text-xs transition-colors">✕</button>
           </div>
         </div>
+
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
           <div className="w-16 h-16 text-violet-400"><ClearPathLogo size={64} /></div>
           <div>
@@ -366,6 +412,7 @@ export default function DesktopApp() {
               Your on-demand desktop assistant. Start a session to get help with anything on your screen.
             </p>
           </div>
+
           <button onClick={startSession}
             className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-base transition-all hover:-translate-y-0.5 hover:shadow-2xl"
             style={{
@@ -376,11 +423,13 @@ export default function DesktopApp() {
             <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
             Start Overlay Session
           </button>
+
           <div className="w-full flex items-center gap-3">
             <div className="flex-1 h-px bg-slate-800" />
             <span className="text-slate-600 text-xs">or</span>
             <div className="flex-1 h-px bg-slate-800" />
           </div>
+
           <button onClick={openWorkspace}
             className="flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium transition-colors px-5 py-2.5 rounded-xl hover:bg-white/5 w-full justify-center">
             <span>📋</span>
@@ -388,6 +437,7 @@ export default function DesktopApp() {
             <span className="opacity-40">→</span>
           </button>
         </div>
+
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-3"
           style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <button onClick={() => handleAlwaysOnTop(!alwaysOnTop)}
@@ -407,6 +457,9 @@ export default function DesktopApp() {
     );
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     ACTIVE SESSION VIEW
+     ════════════════════════════════════════════════════════════════ */
   return (
     <div className="flex flex-col relative"
       style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9' }}>
@@ -420,6 +473,7 @@ export default function DesktopApp() {
         />
       )}
 
+      {/* ── Title bar ─────────────────────────────────────────── */}
       <div data-tauri-drag-region
         className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
         style={{ background: '#0F172A', userSelect: 'none' }}>
@@ -442,6 +496,7 @@ export default function DesktopApp() {
         </div>
       </div>
 
+      {/* ── Mode + Workspace bar ──────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-2"
         style={{ background: '#1E293B', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="relative" ref={modeMenuRef}>
@@ -452,6 +507,7 @@ export default function DesktopApp() {
             <span>{cfg.name}</span>
             <span className="text-slate-500 text-xs ml-0.5">{showModeMenu ? '▴' : '▾'}</span>
           </button>
+
           {showModeMenu && (
             <div className="absolute top-full mt-1.5 left-0 w-56 rounded-2xl overflow-hidden z-50"
               style={{ background: '#1E293B', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
@@ -479,6 +535,7 @@ export default function DesktopApp() {
             </div>
           )}
         </div>
+
         <button onClick={openWorkspace}
           className="flex items-center gap-1.5 text-slate-500 hover:text-slate-200 text-xs font-medium transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5">
           <span>📋</span>
@@ -487,8 +544,11 @@ export default function DesktopApp() {
         </button>
       </div>
 
+      {/* ── Scrollable main area ──────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0"
         style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
+
+        {/* Analyze Screen — primary CTA */}
         <button onClick={() => setShowAnalyzeDialog(true)}
           className="w-full flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl font-bold transition-all hover:-translate-y-0.5"
           style={{
@@ -503,12 +563,14 @@ export default function DesktopApp() {
           <span className="text-[11px] opacity-75 font-normal">Capture + enter Diagnose Mode</span>
         </button>
 
+        {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-slate-800" />
           <span className="text-[11px] text-slate-600">or paste text below</span>
           <div className="flex-1 h-px bg-slate-800" />
         </div>
 
+        {/* Text input */}
         <div>
           <textarea
             value={inputText}
@@ -535,6 +597,7 @@ export default function DesktopApp() {
           </div>
         </div>
 
+        {/* Action buttons */}
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             {ACTIONS.map(({ id, icon, label }) => {
@@ -561,6 +624,7 @@ export default function DesktopApp() {
           </button>
         </div>
 
+        {/* Processing */}
         {processing && (
           <div className="flex items-center justify-center gap-1.5 py-3">
             {[0, 1, 2].map(i => (
@@ -571,6 +635,7 @@ export default function DesktopApp() {
           </div>
         )}
 
+        {/* Output panel */}
         {output && !processing && (
           <div className="rounded-2xl p-4 space-y-3"
             style={{ background: cfg.hex.accent + '18', border: `1px solid ${cfg.hex.accent}30` }}>
@@ -608,6 +673,7 @@ export default function DesktopApp() {
         )}
       </div>
 
+      {/* ── Footer bar ────────────────────────────────────────── */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
         style={{ background: '#0B1120', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2">
