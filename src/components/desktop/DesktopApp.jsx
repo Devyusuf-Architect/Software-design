@@ -101,9 +101,8 @@ function processText(text, action, options = {}) {
    ════════════════════════════════════════════════════════════════════════ */
 export default function DesktopApp() {
   /* ── App state ────────────────────────────────────────────────── */
-  const [appView,        setAppView]        = useState('idle');
-  const [collapsed,      setCollapsed]      = useState(false);
-  const [transitioning,  setTransitioning]  = useState(false);
+  const [appView,   setAppView]   = useState('idle');
+  const [collapsed, setCollapsed] = useState(false);
 
   /* ── Overlay content ──────────────────────────────────────────── */
   const [overlayMode,       setOverlayMode]       = useState('calm');
@@ -143,108 +142,70 @@ export default function DesktopApp() {
   };
 
   /* ── Session management ───────────────────────────────────────── */
-  const startSession = async () => {
-    setTransitioning(true);
-    try {
-      const win = await tauriWindow();
-      if (win) {
-        await win.setAlwaysOnTop(true).catch(() => {});
-        await resizeTo(W_OVERLAY, H_OVERLAY);
-      }
-      setAlwaysOnTop(true);
-      setTimeout(() => { setAppView('session'); setTransitioning(false); }, 150);
-    } catch {
-      setTransitioning(false);
-    }
+  const startSession = () => {
+    setAppView('session');
+    setAlwaysOnTop(true);
+    tauriWindow().then(win => win?.setAlwaysOnTop(true).catch(() => {})).catch(() => {});
   };
 
-  const endSession = async () => {
-    setTransitioning(true);
+  const endSession = () => {
     stop();
-    try {
-      const win = await tauriWindow();
-      if (win) {
-        await win.setAlwaysOnTop(false).catch(() => {});
-        await resizeTo(W_OVERLAY, H_OVERLAY);
-      }
-    } catch {}
-    setTimeout(() => {
-      setAppView('idle');
-      setCollapsed(false);
-      setAlwaysOnTop(false);
-      setOutput(null);
-      setInputText('');
-      setActiveAction(null);
-      setShowAnalyzeDialog(false);
-      setDiagnoseText('');
-      setDiagnoseResults(null);
-      setDiagnoseSuggested(null);
-      setTransitioning(false);
-    }, 150);
+    setAppView('idle');
+    setCollapsed(false);
+    setAlwaysOnTop(false);
+    setOutput(null);
+    setInputText('');
+    setActiveAction(null);
+    setShowAnalyzeDialog(false);
+    setDiagnoseText('');
+    setDiagnoseResults(null);
+    setDiagnoseSuggested(null);
+    tauriWindow().then(win => win?.setAlwaysOnTop(false).catch(() => {})).catch(() => {});
   };
 
   /* ── Collapse / expand ────────────────────────────────────────── */
-  const toggleCollapse = async () => {
+  const toggleCollapse = () => {
     const next = !collapsed;
     setCollapsed(next);
-    await resizeTo(W_OVERLAY, next ? H_COLLAPSED : H_OVERLAY).catch(() => {});
+    resizeTo(W_OVERLAY, next ? H_COLLAPSED : H_OVERLAY).catch(() => {});
   };
 
   /* ── Workspace ────────────────────────────────────────────────── */
-  const openWorkspace = async () => {
-    setTransitioning(true);
-    try {
-      await resizeTo(W_WORKSPACE, H_WORKSPACE);
-      const win = await tauriWindow();
-      if (win) await win.center().catch(() => {});
-    } catch {}
-    setTimeout(() => { setAppView('workspace'); setTransitioning(false); }, 200);
+  const openWorkspace = () => {
+    setAppView('workspace');
+    resizeTo(W_WORKSPACE, H_WORKSPACE)
+      .then(() => tauriWindow().then(win => win?.center().catch(() => {})))
+      .catch(() => {});
   };
 
-  const closeWorkspace = async () => {
-    setTransitioning(true);
-    try {
-      await resizeTo(W_OVERLAY, H_OVERLAY);
-      const win = await tauriWindow();
-      if (win) await win.center().catch(() => {});
-    } catch {}
-    setTimeout(() => { setAppView('session'); setTransitioning(false); }, 200);
+  const closeWorkspace = () => {
+    setAppView('session');
+    resizeTo(W_OVERLAY, H_OVERLAY)
+      .then(() => tauriWindow().then(win => win?.center().catch(() => {})))
+      .catch(() => {});
   };
 
   /* ── Diagnose Mode ────────────────────────────────────────────── */
-  const openDiagnose = async (text, prebuiltResults, suggestedModeOverride) => {
+  const openDiagnose = (text, prebuiltResults, suggestedModeOverride) => {
     const results   = prebuiltResults || analyzeAllModes(text);
     const suggested = suggestedModeOverride || suggestMode(text);
     setDiagnoseText(text);
     setDiagnoseResults(results);
     setDiagnoseSuggested(suggested);
-    setTransitioning(true);
-    try {
-      const win = await tauriWindow();
-      if (win) {
-        await resizeTo(W_DIAGNOSE, H_DIAGNOSE);
-        await win.center().catch(() => {});
-      }
-    } catch {}
-    setTimeout(() => { setAppView('diagnose'); setTransitioning(false); }, 150);
+    setAppView('diagnose');
+    resizeTo(W_DIAGNOSE, H_DIAGNOSE)
+      .then(() => tauriWindow().then(win => win?.center().catch(() => {})))
+      .catch(() => {});
   };
 
-  const closeDiagnose = async () => {
-    setTransitioning(true);
-    try {
-      const win = await tauriWindow();
-      if (win) {
-        await resizeTo(W_OVERLAY, H_OVERLAY);
-        await win.center().catch(() => {});
-      }
-    } catch {}
-    setTimeout(() => {
-      setAppView('session');
-      setDiagnoseText('');
-      setDiagnoseResults(null);
-      setDiagnoseSuggested(null);
-      setTransitioning(false);
-    }, 150);
+  const closeDiagnose = () => {
+    setAppView('session');
+    setDiagnoseText('');
+    setDiagnoseResults(null);
+    setDiagnoseSuggested(null);
+    resizeTo(W_OVERLAY, H_OVERLAY)
+      .then(() => tauriWindow().then(win => win?.center().catch(() => {})))
+      .catch(() => {});
   };
 
   /* ── Manual text actions ──────────────────────────────────────── */
@@ -316,14 +277,13 @@ export default function DesktopApp() {
   /* ── Style helpers ────────────────────────────────────────────── */
   const btnPrimary   = { background: cfg.hex.accent, color: '#fff' };
   const btnSecondary = { background: '#1E293B', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.08)' };
-  const fadeStyle    = { opacity: transitioning ? 0 : 1, transition: 'opacity 0.15s' };
 
   /* ════════════════════════════════════════════════════════════════
      DIAGNOSE VIEW
      ════════════════════════════════════════════════════════════════ */
   if (appView === 'diagnose') {
     return (
-      <div style={fadeStyle}>
+      <div>
         <DiagnoseView
           text={diagnoseText}
           results={diagnoseResults}
@@ -344,7 +304,7 @@ export default function DesktopApp() {
      ════════════════════════════════════════════════════════════════ */
   if (appView === 'workspace') {
     return (
-      <div className="flex flex-col" style={{ height: '100vh', background: '#0F172A', ...fadeStyle }}>
+      <div className="flex flex-col" style={{ height: '100vh', background: '#0F172A' }}>
         <div
           data-tauri-drag-region
           className="flex-shrink-0 flex items-center justify-between px-4 py-2.5"
@@ -379,7 +339,7 @@ export default function DesktopApp() {
     return (
       <div data-tauri-drag-region
         className="flex items-center justify-between px-4"
-        style={{ height: '100vh', background: '#0F172A', userSelect: 'none', ...fadeStyle }}>
+        style={{ height: '100vh', background: '#0F172A', userSelect: 'none' }}>
         <div className="flex items-center gap-2 pointer-events-none">
           <div className="w-4 h-4 text-violet-400"><ClearPathLogo size={16} /></div>
           <span className="font-bold text-white text-sm">ClearPath</span>
@@ -406,7 +366,7 @@ export default function DesktopApp() {
      ════════════════════════════════════════════════════════════════ */
   if (appView === 'idle') {
     return (
-      <div className="flex flex-col" style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9', ...fadeStyle }}>
+      <div className="flex flex-col" style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9' }}>
         <div data-tauri-drag-region
           className="flex-shrink-0 flex items-center justify-between px-4 py-3"
           style={{ background: '#0F172A', userSelect: 'none' }}>
@@ -481,7 +441,7 @@ export default function DesktopApp() {
      ════════════════════════════════════════════════════════════════ */
   return (
     <div className="flex flex-col relative"
-      style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9', ...fadeStyle }}>
+      style={{ height: '100vh', background: '#0F172A', color: '#F1F5F9' }}>
 
       {showAnalyzeDialog && (
         <AnalyzeDialog
