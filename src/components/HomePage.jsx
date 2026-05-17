@@ -770,9 +770,7 @@ export default function HomePage() {
                   Created by
                 </summary>
                 <div className="mt-2 text-[12px] text-slate-500 space-y-1">
-                  <p className="font-semibold text-slate-600">Lead:</p>
                   <p>Yusuf Siddiqui</p>
-                  <p className="font-semibold text-slate-600 mt-2">Team:</p>
                   <p>Leena Yarkhan</p>
                   <p>Mikhail Siddiqui</p>
                   <p>Jude Salem</p>
