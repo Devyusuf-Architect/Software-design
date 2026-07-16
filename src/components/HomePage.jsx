@@ -775,6 +775,9 @@ export default function HomePage() {
                   <p>Jude Salem</p>
                 </div>
               </details>
+              <div className="mt-3 text-[11px] text-slate-400">
+                3rd place winner — MIST Toronto
+              </div>
             </div>
           </div>
         </div>
